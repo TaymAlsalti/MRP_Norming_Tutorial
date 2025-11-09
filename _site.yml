@@ -1,0 +1,37 @@
+name: MRP Norming Project Website
+output_dir: docs
+navbar:
+  left:
+  - text: Home
+    href: "index.html"
+    
+  - text: MRP Norming Tutorial
+    href: "tutorial.html"
+    
+
+  right:
+  - text: ''
+    icon: fa-github
+    href: https://github.com/TaymAlsalti/MRP_Norming
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate 
+    number_sections: true
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    self_contained: true
+exclude:
+- '*.rda'
+- '*.pdf'
+- '*.dta'
+- '*.csv'
+- '*.csl'
+- '*.bibtex'
+- 'styles.css'
+- "renv.lock"
+- '*.rds'
+- archive
+- data
+- figures

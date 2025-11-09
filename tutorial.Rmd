@@ -1,0 +1,1512 @@
+---
+title: "RPP norming tutorial"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_depth: 4
+    toc_float: true
+---
+<style>
+.main-container {
+  max-width: 1400px !important;  /* Adjust the width as needed */
+}
+
+pre, code {
+  white-space: pre-wrap;  /* Ensures that long lines wrap */
+  word-wrap: break-word;  /* Breaks long words if necessary */
+}
+
+pre {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: auto !important; /* Add horizontal scrollbar if content overflows */
+  white-space: pre-line !important; /* Convert line breaks to spaces */
+  word-wrap: break-word !important; /* Break long words if necessary */
+  word-break: break-all !important; /* Break words to fit the container */
+  font-size: 14px !important; /* Adjust font size if needed */
+}
+
+</style>
+
+```{r setup, message = FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = T,
+	include = TRUE,
+	error = TRUE,
+	fig.width = 8,
+	fig.height = 4
+)
+
+library(tidyverse)
+library(haven)
+library(data.table)
+library(ggrepel)
+library(kableExtra)
+library(brms)
+library(tidybayes)
+library(marginaleffects)
+library(bayesplot)
+library(rstan)
+
+# depending on the platform on which you want to run the brm you might need this or not. We ran the models on a Linux-operated server
+options(mc.cores = 4,
+        brms.backend = "cmdstanr",
+        scipen = 999,
+        digits = 4,
+        width = 120)
+
+# windowsFonts(Times = windowsFont("Times New Roman"))
+theme_set(theme_minimal(base_size = 12, base_family = "Times"))
+
+## load preprocessed datasets (see preprocessing code below)
+
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds")
+census_sb <- readRDS("data/preprocessed/us_census/census_sb.rds")
+
+
+# RPP/RPP function
+source("age_norm_comparisons.R")
+```
+
+# Data preprocessing
+## Sample data
+```{r}
+# load dataset after basic cleaning and labelling (see github.com/synth-science/synth-rep-dataset for the raw data and basic cleaning code)
+sb_raw <- read_rds("data/raw/sb/sosci_labelled.rds") 
+
+
+OCC_classification <- readxl::read_xlsx(path = "data/raw/sb/OCC_classification.xlsx", sheet = "classification_table" ) %>% 
+  mutate(occ = as.character(occ_occupation)) 
+
+# load the degfield classification table
+
+degfield_hierarchy <- readxl::read_excel("data/raw/sb/degfield_hierarchy.xlsx") %>% # contains a classification of the general codes into larger categories based on this wikipedia article: https://en.wikipedia.org/wiki/Outline_of_academic_disciplines
+  mutate(
+    degfield_label = str_to_lower(degfield_label),
+    degfield_category = str_to_lower(degfield_category),
+    degfield_alternative_category = str_to_lower(degfield_alternative_category))
+
+divisions <- list(
+  new_england = c("connecticut", "maine", "massachusetts", "new hampshire", "rhode island", "vermont"),
+  middle_atlantic = c("new jersey", "new york", "pennsylvania"),
+  east_north_central = c("illinois", "indiana", "michigan", "ohio", "wisconsin"),
+  west_north_central = c("iowa", "kansas", "minnesota", "missouri", "nebraska", "north dakota", "south dakota"),
+  south_atlantic = c("delaware", "district of columbia", "florida", "georgia", "maryland", 
+                     "north carolina", "south carolina", "virginia", "west virginia"),
+  east_south_central = c("alabama", "kentucky", "mississippi", "tennessee"),
+  west_south_central = c("arkansas", "louisiana", "oklahoma/indian territory", "oklahoma", "texas"),
+  mountain = c("arizona", "colorado", "idaho", "montana", "nevada", "new mexico", "utah", "wyoming"),
+  pacific = c("alaska", "california", "hawaii", "oregon", "washington")
+)
+
+
+sb_data <- sb_raw %>% 
+  select(pid = CASE,
+         starts_with("SD"),
+         gender,
+         starts_with("WS")) %>%
+  rename(educ = SD08,
+         occ = SD10) %>%
+    setNames(sapply(names(.), function(x) {
+    label <- attr(sb_raw[[x]], "label", exact = TRUE)
+    if (!is.null(label)) label else x
+  })) %>% 
+  rename_all(tolower) %>% 
+  rename(age = "age: [01]",
+         inctot = "inctot: [01]") %>% 
+  left_join(OCC_classification %>% select(occ, occ_category),
+            by = "occ") %>% # to classify the occ variable merge with the OCC_classification df
+    mutate(across(where(~ is.character(.) || is.factor(.) || inherits(., "labelled")),
+                ~ if (is.factor(.)) {
+                    factor(tolower(as.character(.)))
+                  } else if (inherits(., "labelled")) {
+                    haven::labelled(tolower(as.character(.)), attr(., "labels"))
+                  } else {
+                    tolower(.)
+                  })) %>% 
+  left_join(degfield_hierarchy %>% select(degfield_label, degfield_category), # to categorize degfield merge with degfield_hierarchy
+            by = c("degfield" = "degfield_label")) %>% 
+  rename_all(~ gsub(" ", "_", .)) %>% 
+  rename_all(~ gsub("-", "", .)) %>% 
+  mutate(
+      region_birth = case_when(
+        bpl_state %in% divisions$new_england ~ "new england division",
+        bpl_state %in% divisions$middle_atlantic ~ "middle atlantic division",
+        bpl_state %in% divisions$east_north_central ~ "east north central division",
+        bpl_state %in% divisions$west_north_central ~ "west north central division",
+        bpl_state %in% divisions$south_atlantic ~ "south atlantic division",
+        bpl_state %in% divisions$east_south_central ~ "east south central division",
+        bpl_state %in% divisions$west_south_central ~ "west south central division",
+        bpl_state %in% divisions$mountain ~ "mountain division",
+        bpl_state %in% divisions$pacific ~ "pacific division",
+        TRUE ~ "abroad"
+      ),
+      region_residence = case_when(
+        state %in% divisions$new_england ~ "new england division",
+        state %in% divisions$middle_atlantic ~ "middle atlantic division",
+        state %in% divisions$east_north_central ~ "east north central division",
+        state %in% divisions$west_north_central ~ "west north central division",
+        state %in% divisions$south_atlantic ~ "south atlantic division",
+        state %in% divisions$east_south_central ~ "east south central division",
+        state %in% divisions$west_south_central ~ "west south central division",
+        state %in% divisions$mountain ~ "mountain division",
+        state %in% divisions$pacific ~ "pacific division",
+        TRUE ~ "abroad"
+      ),
+    income_brackets = cut(as.integer(inctot),
+                        breaks = c(-Inf, 1000, 6000, 12500, 22500, 35000, 50000, 60000, 75000, 90000, 110000, Inf),
+                        ordered_result = FALSE,
+                        labels = c("< $1,000", "$1,000 - $5,999", "$6,000 - $12,499", "$12,500 - $22,499", 
+                                   "$22,500 - $34,999", "$35,000 - $49,999", "$50,000 - $59,999", 
+                                   "$60,000 - $74,999", "$75,000 - $89,999", "$90,000 - $109,999", ">$110,000")),
+    educ = case_when(
+      educ %in% c("n/a or no schooling", 
+                  "grade 5, 6, 7, or 8", 
+                  "grade 9", 
+                  "grade 10",
+                  "grade 11",
+                  "grade 12") ~ "high school or less",
+      educ == "3 years of college" ~ "2 years of college",
+      TRUE ~ educ # Retain other categories as they are
+    ),
+    female = sex == "female",
+    hispan = hispan != "no, not of hispanic, latino, or spanish origin",
+    marst = case_when(
+      marst %in% c("divorced", "separated", "widowed") ~ "separated, widowed, or divorced",
+      TRUE ~ marst # Keep other categories as is
+    ),
+    race = case_when(
+      race %in% c("chinese",
+                  "japanese",
+                  "other asian or pacific islander",
+                  "american indian or alaska native",
+                  "other race") ~ "other",
+      race %in% c("three or more major races",
+                  "two major races (e.g., white and japanese)") ~ "two or more major races",
+      TRUE ~ race # Keep other categories as is
+    ),
+    degfield_branch = case_when(
+      degfield_category %in% c("formal sciences", "interdisciplinary and multi-disciplinary studies (general)", "natural sciences") ~ "natural, formal, and other sciences",
+      is.na(degfield_category) ~ "n/a",
+      TRUE ~ degfield_category
+    ),
+    occ_category = case_when(
+      occ_category %in% c("Natural Resources, Construction, and Maintenance Occupations", "Service Occupations") ~
+        "other",
+      is.na(occ_category) ~ "n/a: unemployed",
+      TRUE ~ occ_category
+    ),
+         wordsum_1 =  if_else(wordsum_1 == 4, 1, 0),
+         wordsum_2 =  if_else(wordsum_2 == 5, 1, 0),
+         wordsum_3 =  if_else(wordsum_3 == 5, 1, 0),
+         wordsum_4 =  if_else(wordsum_4 == 3, 1, 0),
+         wordsum_5 =  if_else(wordsum_5 == 1, 1, 0),
+         wordsum_6 =  if_else(wordsum_6 == 3, 1, 0),
+         wordsum_7 =  if_else(wordsum_7 == 5, 1, 0),
+         wordsum_8 =  if_else(wordsum_8 == 4, 1, 0),
+         wordsum_9 =  if_else(wordsum_9 == 4, 1, 0),
+         wordsum_10 = if_else(wordsum_10 == 1, 1, 0),
+         wordsum = wordsum_1 + wordsum_2 + wordsum_3 + wordsum_4 + wordsum_5 + wordsum_6 + wordsum_7 + wordsum_8 + wordsum_9 + wordsum_10,
+         wordsum_ordinal = as.ordered(wordsum),
+         censoring = case_when(
+           wordsum == 0 ~ "left",
+           wordsum == 10 ~ "right",
+           TRUE ~ "none"
+           
+         )
+  ) %>%
+  select(pid, age, female, educ, income_brackets, income = inctot, race, hispan, region_residence, state, region_birth, degfield_branch, marst, occ_category, starts_with("wordsum"), censoring) %>%
+  filter(complete.cases(.)) %>%
+  left_join(sb_raw %>% rename(pid = "CASE"), by = "pid") %>% 
+	select(-ends_with("_R"))
+
+
+saveRDS(sb_data, "data/preprocessed/wordsum/sb_data.rds")
+
+
+ggplot(sb_data, aes(x = wordsum)) +
+    geom_histogram(bins = 11, fill = "blue", color = "black") +  # Set bins to 11 for values 0 to 10
+    scale_x_continuous(breaks = 0:10) +  # Set x-axis breaks for each possible value
+    labs(x = "Wordsum score", 
+         y = "Frequency") +  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        # panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) + 
+  geom_text(stat = 'count', aes(label = after_stat(count)), 
+            vjust = -0.5,  # Adjust vertical position of labels
+            color = "black")  # Color of the labels
+```
+
+
+## Census data
+```{r, eval=FALSE}
+census_sb_raw <- setDT(read_dta("data/raw/us_census/usa_00015.dta.gz"))
+
+OCC_classification <- readxl::read_xlsx(path = "data/raw/sb/OCC_classification.xlsx", sheet = "classification_table" ) %>% 
+  mutate(occ = as.character(occ),
+         occ_category = tolower(as.character(occ_category))) # change class to character
+
+# Convert labelled columns to factors
+census_sb_raw <- census_sb_raw %>%
+  mutate_if(haven::is.labelled, as_factor)
+
+# Convert to data.table
+census_sb_raw <- as.data.table(census_sb_raw)
+
+# Define income brackets
+income_breaks <- c(-Inf, 1000, 6000, 12500, 22500, 35000, 50000, 60000, 75000, 90000, 110000, Inf)
+income_labels <- c("< $1,000", "$1,000 - $5,999", "$6,000 - $12,499", "$12,500 - $22,499", 
+                   "$22,500 - $34,999", "$35,000 - $49,999", "$50,000 - $59,999", 
+                   "$60,000 - $74,999", "$75,000 - $89,999", "$90,000 - $109,999", ">$110,000")
+
+# Main processing
+census_sb <- census_sb_raw[, `:=`(
+  income_brackets = cut(as.integer(inctot), breaks = income_breaks, labels = income_labels, ordered_result = TRUE)
+)][, .(census_n = sum(perwt)), by = .(state = statefip, sex, age, marst, race, hispan, bpl, educ, degfield, occ, income_brackets)]
+
+# Convert columns to factors and lowercase
+factor_cols <- c("state", "sex", "marst", "race", "hispan", "bpl", "educ", "degfield", "occ", "income_brackets")
+census_sb[, (factor_cols) := lapply(.SD, function(x) factor(tolower(as.character(x)))), .SDcols = factor_cols]
+
+OCC_classification <- as.data.table(OCC_classification)
+
+degfield_hierarchy <- as.data.table(degfield_hierarchy)
+# Join with OCC_classification and degfield_hierarchy
+census_sb <- merge(census_sb, OCC_classification[, .(occ, occ_category)], by = "occ", all.x = TRUE)
+census_sb <- merge(census_sb, degfield_hierarchy[, .(degfield_label, degfield_category)], by.x = "degfield", by.y = "degfield_label", all.x = TRUE)
+
+# Apply transformations
+census_sb[, `:=`(
+region_birth = fcase(
+  bpl %in% divisions$new_england, "new england division",
+  bpl %in% divisions$middle_atlantic, "middle atlantic division",
+  bpl %in% divisions$east_north_central, "east north central division",
+  bpl %in% divisions$west_north_central, "west north central division",
+  bpl %in% divisions$south_atlantic, "south atlantic division",
+  bpl %in% divisions$east_south_central, "east south central division",
+  bpl %in% divisions$west_south_central, "west south central division",
+  bpl %in% divisions$mountain, "mountain division",
+  bpl %in% divisions$pacific, "pacific division",
+  default = "abroad"
+),
+region_residence = fcase(
+  state %in% divisions$new_england, "new england division",
+  state %in% divisions$middle_atlantic, "middle atlantic division",
+  state %in% divisions$east_north_central, "east north central division",
+  state %in% divisions$west_north_central, "west north central division",
+  state %in% divisions$south_atlantic, "south atlantic division",
+  state %in% divisions$east_south_central, "east south central division",
+  state %in% divisions$west_south_central, "west south central division",
+  state %in% divisions$mountain, "mountain division",
+  state %in% divisions$pacific, "pacific division",
+  default = "abroad"
+),
+  age = as.numeric(age),
+  female = sex == "female",
+  marst = fcase(
+    marst %in% c("married, spouse present", "married, spouse absent"), "married",
+    marst %in% c("divorced", "separated", "widowed"), "separated, widowed, or divorced",
+    default = as.character(marst)
+  ),
+  educ = fcase(
+    educ %in% c("nursery school to grade 4", "n/a or no schooling", "grade 5, 6, 7, or 8", "grade 9", "grade 10", "grade 11", "grade 12"), "high school or less",
+    default = as.character(educ)
+  ),
+  hispan = hispan != "not hispanic",
+  race = fcase(
+    race %in% c("chinese", "japanese", "other asian or pacific islander", "american indian or alaska native", "other race, nec"), "other",
+    race %in% c("three or more major races", "two major races"), "two or more major races",
+    default = as.character(race)
+  ),
+  degfield_branch = fcase(
+    degfield_category %in% c("formal sciences", "interdisciplinary and multi-disciplinary studies (general)", "natural sciences"), "natural, formal, and other sciences",
+    is.na(degfield_category), "n/a",
+    default = as.character(degfield_category)
+  ),
+  occ_category = fcase(
+    occ_category %in% c("Natural Resources, Construction, and Maintenance Occupations", "Service Occupations"), "other",
+    default = as.character(occ_category)
+  )
+)]
+
+# Select and filter
+census_sb <- census_sb[, .SD, .SDcols = !c("degfield", "bpl", "state", "occ", "degfield_category", "sex")]
+census_sb <- census_sb[between(age, 21, 67)]
+
+# Convert remaining columns to factors
+factor_cols <- names(census_sb)[sapply(census_sb, is.character)]
+census_sb[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
+
+census_sb <- census_sb %>% 
+  relocate(census_n, .after = "degfield_branch") %>% 
+  group_by(age, female, educ, income_brackets, race, hispan, region_residence, region_birth, degfield_branch, marst, occ_category) %>% 
+  summarise(census_n = sum(census_n)) %>% 
+  ungroup()
+
+saveRDS(census_sb, "data/preprocessed/us_census/census_sb.rds")
+```
+
+```{r}
+census_sb %>% head(14) %>% kable(digits = 2) %>% kable_styling(full_width = FALSE)
+```
+
+
+## Check that the two sources have the same variable categories
+
+```{r}
+cat_sizes_census <- census_sb %>%
+  select(-age, -census_n) %>%
+  map_dfr(~ count(tibble(Category = as.character(.x)), Category), 
+          .id = "Variable") %>%
+  arrange(Variable, Category)
+
+
+cat_sizes_sb <- sb_data %>%
+   select(-age, -wordsum, -id) %>%
+  map_dfr(~ count(tibble(Category = as.character(.x)), Category), 
+          .id = "Variable") %>%
+  arrange(Variable, Category)
+
+anti_join(cat_sizes_census, cat_sizes_sb, by = "Category")
+```
+
+
+
+
+# Distributional disparities
+
+Before applying RPP to correct estimates (be it for norming or other purposes), it's worthwhile to check if there are any differences between the sample and the population (on which we have data from the census) with respect to the variables we wish to use for the correction. 
+
+```{r, fig.height=2, fig.width=10}
+aggregated_sample <- sb_data %>% 
+               filter(between(age, 21, 67)) %>% 
+               mutate(across(-c(starts_with("wordsum"), censoring, pid, age, female, hispan, income_brackets), as.factor)) %>% 
+  group_by(age, female, educ, income_brackets, race, hispan, region_residence, region_birth, degfield_branch, marst, occ_category) %>% 
+  summarise(sample_n = n()) %>% ungroup()
+
+disparities_plot <- census_sb %>% 
+  full_join(aggregated_sample, by = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category")) %>% 
+  mutate(sample_n = replace_na(sample_n, 0),
+         census_n = replace_na(census_n, 0),
+         occ_category = case_when(
+           occ_category == "management, business, science, and arts occupations" ~ "MBSA",
+           occ_category == "sales and office occupations" ~ "SO",
+           occ_category == "production, transportation, and material moving occupations" ~ "PTMM",
+           occ_category == "service occupations" ~ "S",
+           occ_category == "natural resources, construction, and maintenance occupations" ~ "NRCM",
+           TRUE ~ occ_category
+         )) %>%
+  pivot_longer(cols = c(census_n:sample_n), names_to = "source", values_to = "n") %>% 
+  mutate(source = str_sub(source, 1, -3),
+         n = replace_na(n, 0))  %>%
+  mutate(across(-c(n), as.factor)) %>% 
+pivot_longer(cols = -c(n, source), names_to = "variable", values_to = "category") %>% 
+  group_by(source, variable, category) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(percentage = n/sum(n)*100)
+
+# plot age disparities
+disparities_plot %>%
+  filter(variable == "age") %>% 
+  ggplot(aes(x = category, y = percentage, group = source, colour = source, label = round(percentage, digits = 1))) +
+  theme_minimal(base_size = 9, base_family = "Times") +
+  geom_line(linewidth = .5) +
+  facet_grid(cols = vars(variable), scales = "free", space = 'free', as.table = TRUE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none", 
+        # legend.justification = c(1, 1), 
+        legend.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3)) + 
+  labs(x = "", y = "Percentage", colour = "", label = "Percentage") +
+  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x)) +
+  scale_x_discrete(breaks = seq(21, 67, by = 2))
+
+# ggsave("p.jpeg", height = 2, width = 10)
+```
+
+
+```{r, fig.height=3, fig.width=9}
+
+disparities_plot %>%
+  mutate(category = case_when(
+    variable == "educ" ~ factor(category, levels = c("high school or less", "1 year of college", "2 years of college", "4 years of college", "5+ years of college")),
+    variable == "income_brackets" ~ factor(category, levels = c("< $1,000", "$1,000 - $5,999", "$6,000 - $12,499", "$12,500 - $22,499", "$22,500 - $34,999", "$35,000 - $49,999", "$50,000 - $59,999", "$60,000 - $74,999", "$75,000 - $89,999", "$90,000 - $109,999", ">$110,000")),
+    variable == "degfield_branch" ~ factor(category, levels = c("n/a", "humanities", "social sciences", "applied sciences and professions",   "natural, formal, and other sciences")),
+    variable == "occ_category" ~ factor(category, levels = c("n/a: unemployed", "MBSA", "SO", "S", "NRCM", "PTMM")),
+    variable == "race" ~ factor(category, levels = c("white", "black/african american", "two or more major races", "other")),
+    variable == "region_birth" ~ factor(category, levels = c("abroad", "pacific division", "middle atlantic division", "new england division", "mountain division", "east south central division", "south atlantic division", "west south central division", "east north central division", "west north central division")),
+    TRUE ~ category
+  )) %>% 
+  filter(variable != "age") %>% 
+  ggplot(aes(x = category, y = percentage, group = source, colour = source, label = round(percentage, digits = 1))) +
+  theme_minimal(base_size = 9, base_family = "Times") +
+  geom_line(linewidth = .5) +
+  facet_grid(cols = vars(variable), scales = "free", space = 'free') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        legend.position = c(1, 1.08), 
+        legend.justification = c(1, 1), 
+        legend.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3),
+        plot.margin = margin(0, 0, 0, .05, "cm")) + 
+  labs(x = "Category", y = "Percentage", colour = "", label = "Percentage") +
+  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x))
+
+
+# ggsave("p.jpeg", height = 3, width = 9)
+```
+
+
+# Regularised prediction model
+
+
+## Model comparison
+
+Terms of this form `(1 | variable)` represent random intercepts, `female` and `hispan` were included as a fixed effect to avoid estimation problems due to the small number of categories, `s(age)` is a thin plate spline of age.
+
+### Normal with interactions
+```{r}
+
+library(tidyverse)
+library(brms)
+options(mc.cores = 20,
+        threads = threading(5, static = TRUE),
+        brms.backend = "cmdstanr")
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
+rstan::rstan_options(auto_write = TRUE)
+
+  
+
+sb_data_scaled <- sb_data %>% 
+  mutate(age = scale(age),
+         wordsum = scale(wordsum))
+
+brm_1 <- brm(bf(wordsum ~ s(age, by = educ) + (1 | educ) + female + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + (1 | income_brackets) +
+(1 | educ:race) +
+(1 | educ:hispan) +
+(1 | educ:region_residence) +
+(1 | educ:marst) +
+(1 | educ:degfield_branch) +
+(1 | educ:occ_category) +
+(1 | educ:region_birth) +
+(1 | educ:income_brackets) +
+(1 | race:hispan) +
+(1 | race:region_residence) +
+(1 | race:marst) +
+(1 | race:degfield_branch) +
+(1 | race:occ_category) +
+(1 | race:region_birth) +
+(1 | race:income_brackets) +
+(1 | hispan:region_residence) +
+(1 | hispan:marst) +
+(1 | hispan:degfield_branch) +
+(1 | hispan:occ_category) +
+(1 | hispan:region_birth) +
+(1 | hispan:income_brackets) +
+(1 | region_residence:marst) +
+(1 | region_residence:degfield_branch) +
+(1 | region_residence:occ_category) +
+(1 | region_residence:region_birth) +
+(1 | region_residence:income_brackets) +
+(1 | marst:degfield_branch) +
+(1 | marst:occ_category) +
+(1 | marst:region_birth) +
+(1 | marst:income_brackets) +
+(1 | degfield_branch:occ_category) +
+(1 | degfield_branch:region_birth) +
+(1 | degfield_branch:income_brackets) +
+(1 | occ_category:region_birth) +
+(1 | occ_category:income_brackets) +
+(1 | region_birth:income_brackets) +
+(1 | female:educ) +
+(1 | female:race) +
+(1 | female:hispan) +
+(1 | female:region_residence) +
+(1 | female:marst) +
+(1 | female:degfield_branch) +
+(1 | female:occ_category) +
+(1 | female:region_birth) +
+(1 | female:income_brackets),
+                   sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    prior = prior(normal(0,1), class = "b") +
+            prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_1",
+    data = sb_data_scaled) %>%
+  add_criterion("loo")
+
+brm_1
+
+
+plot(brm_1, widths = c(1, 2))
+
+```
+
+Many large sd estimates for the random intercepts but most CI bounds, especially for interactions, either include 0 or approach it, indicating that the data are not large enough to estimate interaction effects. 
+
+
+
+### Without interactions
+```{r}
+
+library(tidyverse)
+library(brms)
+options(mc.cores = 20,
+        threads = threading(5, static = TRUE),
+        brms.backend = "cmdstanr")
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
+rstan::rstan_options(auto_write = TRUE)
+
+
+
+
+brm_2 <- brm(bf(
+  wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+  sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    family = gaussian(), # default
+    prior = prior(normal(0,1), class = "b") + # coefficients of fixed effects
+            prior(normal(0,3), class = "Intercept") + # overall intercept
+            prior(exponential(1), class = "sd") + # SDs of the random intercepts
+            prior(exponential(1), class = "sds"), # wigliness parameters
+    iter = 2000, # default
+    chains = 4, # default 
+    control = list(adapt_delta = 0.8), # default
+    seed = 14,
+    file = "data/brms/wordsum/sb/brm_2",
+    data = sb_data_scaled) %>%
+  add_criterion("loo")
+
+
+
+
+brm_2
+
+plot(brm_2, widths = c(1, 2))
+
+loo_compare(brm_1, brm_2)
+
+```
+
+The model without interactions fits slightly better, probably because any predictions based on the interactions are way too uncertain to make a difference in average prediction accuracy. The divergent transitions are concerning, but most of them are gone when modelling the outcome as ordinal or when boosting the adapt_delta parameter.
+
+#### Boosted n of iterations and adapt_delta
+```{r}
+library(tidyverse)
+library(brms)
+options(mc.cores = 20,
+        threads = threading(5, static = TRUE),
+        brms.backend = "cmdstanr")
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
+rstan::rstan_options(auto_write = TRUE)
+
+
+
+sb_data_scaled <- sb_data %>% 
+  mutate(age = scale(age),
+         wordsum = scale(wordsum))
+
+
+
+brm_2_boosted <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                   sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    iter = 5000,
+    control = list(adapt_delta = 0.999),
+    prior = prior(normal(0,1), class = "b") +
+            prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_2_boosted",
+    data = sb_data_scaled) %>%
+  add_criterion("loo")
+
+
+brm_2_boosted
+
+
+loo_compare(brm_2, brm_2_boosted)
+```
+
+No difference between the model with 10/4000 divergent transitions and the same model with 1/10000 divergent transition.
+
+
+
+Divergent transitions reduced and some effect estimates changed, but no change in prediction accuracy.
+
+
+
+### Ordinal model
+```{r}
+
+
+library(tidyverse)
+library(brms)
+options(mc.cores = 20,
+        threads = threading(5, static = TRUE),
+        brms.backend = "cmdstanr")
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
+rstan::rstan_options(auto_write = TRUE)
+
+
+brm_4 <- brm(bf(wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                disc ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    family = cumulative(),
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_4",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+brm_4
+
+pp_check(brm_4)
+
+
+
+```
+
+
+The ordinal model fits the data better and has only 3 divergent transitions, probably because it accounts for the discrete  and bounded nature of the outcome, but we stick with normal because it does not matter for the final RPP results (see below).
+
+
+
+### Negative binomial model
+```{r}
+
+
+brm_5 <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                   shape ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    family = negbinomial(),
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_5",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+brm_5
+```
+
+
+Does not converge.
+
+
+```{r}
+
+
+brm_5_v2 <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+    seed = 14,
+    chains = 4,
+    family = negbinomial(),
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_5_v2",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+brm_5_v2
+```
+
+
+```{r}
+
+
+brm_5_more_iters <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                   shape ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    iter = 5000,
+    family = negbinomial(),
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_5_more_iters",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+
+brm_5_more_iters
+```
+
+Failed to converge even with more iterations.
+
+
+### Poisson model
+```{r}
+
+
+
+brm_6 <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+    seed = 14,
+    chains = 4,
+    iter = 2000,
+    family = poisson(),
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_6",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+brm_6
+
+pp_check(brm_6)
+
+loo_compare(brm_4, brm_6)
+
+```
+
+Bad fit compared to normal and ordinal models. 
+
+
+### Binomial model
+```{r}
+
+
+brm_7 <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+    family = binomial(),  
+    seed = 14,
+    chains = 4,
+    iter = 2000,
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_7",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+pp_check(brm_7)
+brm_7
+loo_compare(brm_4, brm_7)
+```
+Binomial doesn't seem to be too bad a fit. 
+
+#### Binomial with random person intercept
+```{r}
+
+
+brm_7_ab <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets) + (1 | pid)),
+    family = binomial(),  
+    seed = 14,
+    chains = 4,
+    iter = 2000,
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_7_ab",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+
+pp_check(brm_7_ab)
+brm_7_ab
+loo_compare(brm_2, brm_4, brm_7, brm_7_ab)
+```
+
+
+
+### Beta model
+```{r}
+
+
+sb_data <- sb_data %>% mutate(wordsum_prop = wordsum / 11) %>% filter(wordsum_prop != 0) # exclude one person with a score of 0
+
+brm_8 <- brm(bf(wordsum_prop ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+    family = Beta(),  
+    seed = 14,
+    chains = 4,
+    iter = 2000,
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_8",
+    data = sb_data) %>%
+  add_criterion("loo")
+
+brm_8
+
+pp_check(brm_8)
+
+```
+
+Can't loo_compare because we're missing one data point, but pp_check doesn't look too bad.
+
+
+### Beta-binomial model
+```{r}
+
+
+library(tidyverse)
+library(brms)
+options(mc.cores = 20,
+        threads = threading(5, static = TRUE),
+        brms.backend = "cmdstanr")
+sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
+rstan::rstan_options(auto_write = TRUE)
+
+
+brm_9 <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+                # phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets))
+    family = beta_binomial(),
+    seed = 14,
+    chains = 4,
+    iter = 2000,
+    prior = prior(normal(0,1), class = "b") +
+            # prior(normal(0,3), class = "Intercept") +
+            prior(exponential(1), class = "sd") + 
+            prior(exponential(1), class = "sds"),
+    file = "data/brms/wordsum/sb/brm_9",
+    data = sb_data) %>%
+  add_criterion("loo")
+# 
+# pp_check(brm_9)
+# brm_9
+# loo_compare(brm_2, brm_4, brm_9)
+```
+
+Took too long and kept crashing.
+
+
+
+
+
+
+## Some model exploration of the selected model
+
+### Summary
+
+```{r, warning = T}
+brm_2
+```
+
+ We can conclude that the 4 chains converged since the `Rhat`s are consistently $<=1.01$. We see that the sd `Estimate`s of the random intercepts for $\sigma$ are pretty small so we don't expect large variations in the residual variance depending on the predictors. Larger sds can be observed for predicting `\mu` (i.e., the actual Wordsum Scores). Males scored on average 0.11 higher on Wordsum than females. 
+
+### Check model fit
+
+```{r}
+pp_check(brm_2) 
+```
+
+
+#### Within age groups
+```{r}
+t <- sb_data %>% mutate(age_group = if_else(age > 40, "> 40", "=< 40"))
+
+
+yrep <- posterior_predict(brm_2, newdata = t, ndraws = 1000)
+
+
+p <- ppc_pit_ecdf_grouped(t$wordsum, yrep, group = as.factor(t$age_group), prob = 0.99, plot_diff = F)
+
+p
+
+```
+
+Some deviations at the right tail but not too bad.
+
+
+
+### R2
+```{r}
+loo_R2(brm_2)
+```
+
+
+The included predictors do not explain a lot of variance (~7%), so not a lot of adjustment can happen even if there are differences between the sample and the population. 
+
+
+
+
+# Poststratifcation
+
+This is the P part of RPP. 
+
+## Simulate a sample with the same joint distribution as the census
+
+```{r}
+set.seed(810)
+
+sim_pop_sample <- census_sb %>% 
+  sample_n(size = 100000, 
+           weight = census_n, 
+           replace = TRUE)
+
+
+sim_pop_sample <- census_sb %>% 
+  sample_n(size = 100000, 
+           weight = census_n, 
+           replace = TRUE) %>% 
+  mutate(pid = row_number() + max(sb_data$id)) |> 
+  select(pid, everything())
+```
+
+
+## Estimate CFT 20-R for those simulated participants
+
+Now that we have a post-stratified sample, we can use _tidybayes_’s `add_predicted_draws()` function to draw 1000 samples (i.e., Wordsum Scores) from the posterior for each one of the 100000 simulated participants in `sim_pop_sample`:
+
+```{r, eval=FALSE}
+
+sim_pop_sample_with_draws2 <- sim_pop_sample %>%
+  add_predicted_draws(brm_7_ab, 
+                      ndraws = 1000, 
+                      seed = 810, 
+                      allow_new_levels = TRUE) %>% 
+  mutate(.prediction = round(pmax(0, pmin(10, .prediction))))
+
+
+
+sim_pop_sample_with_draws <- sim_pop_sample %>%
+  add_predicted_draws(brm_2, 
+                      ndraws = 1000, 
+                      seed = 810, 
+                      allow_new_levels = TRUE) %>% 
+  mutate(.prediction = round(pmax(0, pmin(10, .prediction))))
+
+data.table::fwrite(sim_pop_sample_with_draws, "data/results/wordsum/sim_pop_sample_with_draws.csv.gz")
+```
+
+This yields a dataframe in long format with 100000 (number of simulated participants) * 1000 (number of draws from the posterior) = 100 million rows. `allow_new_levels = TRUE` is necessary for estimating the outcome for combinations of the 11 predictors which do not occur in the actual TL sample. This is inevitable in detailed enough poststratification tables and was the case here as the poststratification table we used had over 3 million subcategories/rows. The `mutate()` call serves to set all predicted CFT 20-R 20-R score scores which go below or above the scale limits (0 and 10, respectively), to those scale limits.
+
+
+# Produce norms
+
+## Age group means and SDs
+
+Here we aggregate the intelligence scores by age and compute the RPP corrected means and SDs (+ their SEs) for each age group:
+
+```{r}
+sim_pop_sample_with_draws <- data.table::fread("data/results/wordsum/sim_pop_sample_with_draws.csv.gz")
+
+means_sds_and_ses_RPP <- sim_pop_sample_with_draws2 %>% 
+  group_by(age, .draw) %>% 
+  summarise(mean_prediction = mean(.prediction), 
+            sd_prediction = sd(.prediction)) %>%
+  group_by(age) %>% 
+  summarise(RPP_mean = mean(mean_prediction), 
+            RPP_se_of_mean = sd(mean_prediction), 
+            RPP_sd = sqrt(mean(sd_prediction^2)), 
+            RPP_se_of_sd = sd(sd_prediction))
+
+
+means_sds_and_ses_RPP %>% head(14) %>% kable(digits = 2) %>% kable_styling(full_width = FALSE)
+
+```
+
+This code chunk first aggregates by age and posterior draw (1000) to compute the mean and SD of Wordsum estimates across the 100000 simulated participants. Then it computes the means and SDs across the draws (which form the RPP means and SDs for each age group) and the SDs of the means and SDs calculated in the previous step, hence yielding the Bayesian SEs of the RPP means and SDs, respectively. 
+
+
+## Age norm tables
+
+### Linearly transformed IQs / T-scores
+Here we calculate linearly transformed IQs for all cft scores that occur in the poststratified sample.
+```{r}
+iq <- function(cft_score, mean, sd) {
+  iq_score <- ((cft_score - mean) / sd) * 15 + 100
+  return(iq_score)
+}
+
+t <- function(raw_score, mean, sd) {
+  t_score_value <- ((raw_score - mean) / sd) * 10 + 50
+  return(t_score_value)
+}
+
+iqs_linear <- sim_pop_sample_with_draws %>% 
+  left_join(select(means_sds_and_ses_RPP, c(RPP_mean, RPP_sd, age)), by = "age") %>%
+  group_by(age) %>% 
+  mutate(wordsum_score = .prediction,
+         RPP_IQ = iq(wordsum_score, RPP_mean, RPP_sd),
+         RPP_T = t(wordsum_score, RPP_mean, RPP_sd)) %>% 
+  group_by(age, wordsum_score) %>% 
+  summarise(RPP_IQ = round(mean(iq_score)),
+            RPP_T = round(mean(T_score)))
+
+iqs_linear %>% head(14) %>% kable %>% kable_styling(full_width = FALSE)
+```
+
+Due to the left skewed distributions linear transformation probably underestimates IQs at the lower tail.  
+
+
+### Normalised (area transformed / normal rank transformed) IQs
+
+
+```{r}
+iqs_normalised <- sim_pop_sample_with_draws  %>% 
+  mutate(wordsum_score = as.numeric(as.character(.prediction))) %>%
+  group_by(age, .draw) %>%
+  mutate(n = n(),
+         normal_transformed_score = qnorm((rank(wordsum_score) - 0.5) / n)) %>%
+  mutate(iq_score = normal_transformed_score * 15 + 100,
+         T_score = normal_transformed_score * 10 + 50) %>%
+  group_by(age, wordsum_score) %>%
+  summarise(RPP_IQ = round(mean(iq_score)),
+            RPP_T = round(mean(T_score)))
+
+iqs_normalised %>% head(14) %>% kable %>% kable_styling(full_width = FALSE)
+```
+
+
+### Percentile based scores
+Like above but without converting the cumulative distribution function values to standard Gaussian quantiles and then to IQs/Ts.
+
+```{r}
+percentiles <- sim_pop_sample_with_draws  %>% 
+  mutate(wordsum_score = .prediction) %>%
+  group_by(age, .draw) %>%
+  mutate(n = n(),
+         percentile = (rank(wordsum_score) - 0.5) / n) %>%
+  group_by(age, wordsum_score) %>%
+  summarise(RPP_percentile = mean(percentile))
+
+percentiles %>% head(14) %>% kable %>% kable_styling(full_width = FALSE)
+```
+
+
+# Additional analyses and comparisons
+Here we use the home-made `age_norm_comparisons` function to do some robustness checks and other analyses.
+
+## RPP vs Raw vs RP
+
+```{r}
+
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))) # for handling normal predictons (that go out of wordsum bounds)
+)
+
+
+sb_raw_vs_rpp_rp <- age_norm_comparisons(
+  brm_2,
+  ps_table = census_sb, 
+  RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  sim_size = 100000,
+  prediction_transform = prediction_transform,
+  labels = c(labels = c("Raw", "RPP", "RP")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  # "#20854EFF",
+  # "#7876B1FF",
+  # "#6F99ADFF",
+  "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_raw_vs_rpp_rp.rds"
+  )
+
+
+sb_raw_vs_rpp_rp[-1]
+```
+
+As can be expected given the small associations between the adjustment variables and the outcome, most of the adjustment to the age group means were the result of the regularisation rather than the poststratification. Nevertheless, poststratification led to a downward adjustment of ~.3 points, indicating that Wordsum scores in this Prolific sample are higher than in the broader US population. The percentile plot also indicates that the poststratification introduced additional consistency in the estimates across age groups.
+
+
+### Differences in IQs
+```{r}
+
+
+set.seed(810)
+
+sim_norming_sample <- sb_data %>% 
+  group_by(age, female, educ, income_brackets, race, hispan, region_residence, region_birth, degfield_branch, marst, occ_category) %>% 
+  summarise(sample_n = n()) %>% 
+  ungroup() %>% 
+  sample_n(size = 100000, 
+           weight = sample_n, 
+           replace = TRUE)
+
+
+sim_norming_sample_with_draws <- sim_norming_sample %>%
+  add_predicted_draws(brm_2, 
+                      ndraws = 1000, 
+                      seed = 810, 
+                      allow_new_levels = TRUE) %>% 
+  mutate(.prediction = round(pmax(0, pmin(10, .prediction))))
+
+
+RP_iqs_normalised <- sim_norming_sample_with_draws  %>% 
+  group_by(age, .draw) %>%
+  mutate(n = n(),
+         normal_transformed_score = qnorm((rank(.prediction) - 0.5) / n)) %>%
+  mutate(iq_score = normal_transformed_score * 15 + 100,
+         T_score = normal_transformed_score * 10 + 50) %>%
+  group_by(age, wordsum_score = .prediction) %>%
+  summarise(RP_IQ = round(mean(iq_score)),
+            RP_T = round(mean(T_score)))
+
+
+
+
+raw_iqs_normalised <- sb_data %>% 
+  group_by(age) %>% 
+  mutate(n = n(),
+         normal_transformed_score = qnorm((rank(wordsum) - 0.5) / n)) %>%
+  mutate(iq_score = normal_transformed_score * 15 + 100,
+         T_score = normal_transformed_score * 10 + 50) %>%
+  group_by(age, wordsum_score = wordsum) %>%
+  summarise(Raw_IQ = round(mean(iq_score)),
+            Raw_T = round(mean(T_score)))
+
+iqs <- iqs_normalised %>% 
+  left_join(RP_iqs_normalised, by = c("age", "wordsum_score")) %>% 
+  left_join(raw_iqs_normalised, by = c("age", "wordsum_score")) 
+
+
+mean(iqs$RPP_IQ-iqs$RP_IQ)
+
+mean(abs(iqs$RPP_IQ-iqs$RP_IQ))
+
+max(iqs$RPP_IQ-iqs$RP_IQ)
+
+mean(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)
+
+mean(abs(iqs$RPP_IQ-iqs$Raw_IQ), na.rm = T)
+
+max(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)
+
+```
+
+RPP IQs were on average 1.6 IQ points larger than raw ones (absolute difference 4.9, max difference 20). Again illustrating that poststratification made an incremental difference beyond the regularisation, RPP IQs were almost 2 points larger than RP ones (max = 12).
+
+
+
+## Normal vs. ordinal
+
+```{r}
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) as.numeric(as.character(x))  # for handling ordinal predictions
+)
+
+
+sb_ord_nor <- age_norm_comparisons(
+  brm_2, brm_4, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, normal", "RPP, ordinal")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_ord_nor.rds"
+  )
+
+
+sb_ord_nor[-1]
+```
+
+Barely any difference in means, although ordinal predictions are somewhat more dispersed. 
+
+## Normal vs. binomial
+
+```{r}
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) x  # leave binomial predicitons as is
+)
+
+
+sb_nor_bin <- age_norm_comparisons(
+  brm_2, brm_7, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, normal", "RPP, binomial")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_nor_bin.rds"
+  )
+
+
+sb_nor_bin[-1]
+```
+
+```{r}
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) x,
+  function(x) x  # leave binomial predicitons as is# leave binomial predicitons as is
+)
+
+source("age_norm_comparisons.R")
+
+debug(age_norm_comparisons)
+
+
+sb_nor_bin2 <- age_norm_comparisons(
+  brm_2, brm_7, brm_7_ab, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  # ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, normal", "RPP, binomial", "RPP, binomial + ID intercept")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF",
+  "#7876B1FF"
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_nor_bin2.rds"
+  )
+
+
+sb_nor_bin2
+```
+
+
+
+## Normal vs. beta
+
+```{r}
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) round(x*11)  # for handling beta predictions
+)
+
+
+sb_nor_beta <- age_norm_comparisons(
+  brm_2, brm_8, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, normal", "RPP, beta")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_nor_beta.rds"
+  )
+
+
+sb_nor_beta[-1]
+```
+
+## Default vs. boosted
+
+```{r}
+
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) round(pmax(0, pmin(10, x)))  # for handling normal predictions
+)
+
+
+sb_default_vs_boosted <- age_norm_comparisons(
+  brm_2, brm_2_boosted, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, normal", "RPP, boosted normal")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_default_vs_boosted.rds"
+  )
+
+
+sb_default_vs_boosted[-1]
+```
+
+## With vs. without interactions
+
+```{r}
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictons
+  function(x) round(pmax(0, pmin(10, x)))  # for handling normal predictions
+)
+
+
+sb_with_vs_without_ints <- age_norm_comparisons(
+  brm_2, brm_1, 
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, without ints", "RPP, with ints")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  # "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_with_vs_without_ints.rds"
+  )
+
+
+sb_with_vs_without_ints[-1]
+```
+
+Same here.
+
+
+
+
+
+
+## Effect of removing careless respondents?
+### Exclude participants based on various indicators
+```{r}
+library(careless)
+
+main_qs <- c("AAID", "PANAS", "PAQ", "PSS", "NEPS", "ULS", "FCV", "DAQ", "CESD", "HEXACO", "OCIR", "PTQ", "RAAS", "KSA", "SAS", "MFQ", "CQ")
+
+
+
+sb_data_CR_cleaned <-  sb_data %>% 
+  filter(if_all(starts_with(main_qs), ~ !is.na(.x))) %>% 
+  mutate(psychsyn = psychsyn(select(., starts_with(main_qs))),
+         psychant = psychant(select(., starts_with(main_qs))),
+				 CR_psychsyn_outlier = psychsyn < 0.22,
+				 CR_psychant_outlier = psychant > -0.03,
+				 CR_mahal_outlier = mahad(select(., starts_with(main_qs)), flag = TRUE, confidence = .999, plot = F)$flagged,
+				 CR_not_serious = ZY02 == "No, my responses should not be used.",
+				 CR_knows_wordsum = MS04 == "Yes") %>% 
+         filter(!if_any(starts_with("CR_"), ~ .x == TRUE))
+  
+
+```
+
+Dropped 85 potentially careless respondents.
+
+
+### Refit model and compare RPP results to the one based on the entire data
+
+```{r}
+
+brm_2_non_CR <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+                   sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
+                   ),
+    seed = 14,
+    chains = 4,
+    file = "data/brms/wordsum/sb/brm_4_non_CR",
+    data = sb_data_scaled_CR_cleaned) %>%
+  add_criterion("loo")
+
+brm_2_non_CR
+
+
+```
+
+```{r}
+
+prediction_transform = list(
+  function(x) round(pmax(0, pmin(10, x))), 
+  function(x) round(pmax(0, pmin(10, x)))  
+)
+
+
+sb_vs_non_CR <- age_norm_comparisons(
+  brm_2, brm_2_non_CR,
+  ps_table = census_sb, 
+  # RP = c("census", "norming_sample"),
+  ps_variables = c("age", "female", "educ", "income_brackets", "race", "hispan", "region_residence", "region_birth", "degfield_branch", "marst", "occ_category"), 
+  prediction_transform  = prediction_transform,
+  sim_size = 100000,
+  labels = c(labels = c("Raw", "RPP, full data", "RPP, CR cleaned data")),
+   palette = c(
+  "#BC3C29FF",
+  "#0072B5FF",
+  # "#20854EFF"
+  # "#7876B1FF",
+  # "#6F99ADFF"
+  # "#E18727FF"
+  # "#FFDC91FF",
+  "#EE4C97FF"
+),
+  output_file = "data/results/wordsum/sb_vs_non_CR.rds"
+  )
+
+
+sb_vs_non_CR[-1]
+```
+
+Negligible differences despite dropping 85/478 datapoints. 
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
