@@ -3,3 +3,5 @@ title: "RPP/MRP Norming Tutorial Website"
 ---
 
 Welcome!
+
+We provide all data and code on our [GitHub repo](https://github.com/TaymAlsalti/MRP_Norming_Tutorial). Larger data files (raw census data file and poststratified simulated sample) can be found on [OSF project](https://osf.io/2r9sy/). 
