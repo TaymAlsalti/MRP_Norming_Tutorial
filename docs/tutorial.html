@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2025-11-09" />
+<meta name="date" content="2025-12-03" />
 
 <title>RPP norming tutorial</title>
 
@@ -348,7 +348,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">RPP norming tutorial</h1>
-<h4 class="date">2025-11-09</h4>
+<h4 class="date">2025-12-03</h4>
 
 </div>
 
@@ -1280,15 +1280,14 @@ sources have the same variable categories</h2>
 
 
 cat_sizes_sb &lt;- sb_data %&gt;%
-   select(-age, -wordsum, -id) %&gt;%
+   select(-age, -wordsum, -pid) %&gt;%
   map_dfr(~ count(tibble(Category = as.character(.x)), Category), 
           .id = &quot;Variable&quot;) %&gt;%
-  arrange(Variable, Category)</code></pre>
-<pre><code>## Error in `select()`:
-## ! Can&#39;t select columns that don&#39;t exist.
-## ✖ Column `id` doesn&#39;t exist.</code></pre>
-<pre class="r"><code>anti_join(cat_sizes_census, cat_sizes_sb, by = &quot;Category&quot;)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;cat_sizes_sb&#39; not found</code></pre>
+  arrange(Variable, Category)
+
+anti_join(cat_sizes_census, cat_sizes_sb, by = &quot;Category&quot;)</code></pre>
+<pre><code>## # A tibble: 0 × 3
+## # ℹ 3 variables: Variable &lt;chr&gt;, Category &lt;chr&gt;, n &lt;int&gt;</code></pre>
 </div>
 </div>
 <div id="distributional-disparities" class="section level1" number="2">
@@ -1394,17 +1393,7 @@ categories, <code>s(age)</code> is a thin plate spline of age.</p>
 number="3.1.1">
 <h3><span class="header-section-number">3.1.1</span> Normal with
 interactions</h3>
-<pre class="r"><code>library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = &quot;cmdstanr&quot;)
-sb_data &lt;- readRDS(&quot;data/preprocessed/wordsum/sb_data.rds&quot;) 
-rstan::rstan_options(auto_write = TRUE)
-
-  
-
-sb_data_scaled &lt;- sb_data %&gt;% 
+<pre class="r"><code>sb_data_scaled &lt;- sb_data %&gt;% 
   mutate(age = scale(age),
          wordsum = scale(wordsum))
 
@@ -1734,18 +1723,7 @@ that the data are not large enough to estimate interaction effects.</p>
 <div id="without-interactions" class="section level3" number="3.1.2">
 <h3><span class="header-section-number">3.1.2</span> Without
 interactions</h3>
-<pre class="r"><code>library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = &quot;cmdstanr&quot;)
-sb_data &lt;- readRDS(&quot;data/preprocessed/wordsum/sb_data.rds&quot;) 
-rstan::rstan_options(auto_write = TRUE)
-
-
-
-
-brm_2 &lt;- brm(bf(
+<pre class="r"><code>brm_2 &lt;- brm(bf(
   wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
   sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
                    ),
@@ -1851,17 +1829,7 @@ ordinal or when boosting the adapt_delta parameter.</p>
 number="3.1.2.1">
 <h4><span class="header-section-number">3.1.2.1</span> Boosted n of
 iterations and adapt_delta</h4>
-<pre class="r"><code>library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = &quot;cmdstanr&quot;)
-sb_data &lt;- readRDS(&quot;data/preprocessed/wordsum/sb_data.rds&quot;) 
-rstan::rstan_options(auto_write = TRUE)
-
-
-
-sb_data_scaled &lt;- sb_data %&gt;% 
+<pre class="r"><code>sb_data_scaled &lt;- sb_data %&gt;% 
   mutate(age = scale(age),
          wordsum = scale(wordsum))
 
@@ -1966,16 +1934,7 @@ no change in prediction accuracy.</p>
 </div>
 <div id="ordinal-model" class="section level3" number="3.1.3">
 <h3><span class="header-section-number">3.1.3</span> Ordinal model</h3>
-<pre class="r"><code>library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = &quot;cmdstanr&quot;)
-sb_data &lt;- readRDS(&quot;data/preprocessed/wordsum/sb_data.rds&quot;) 
-rstan::rstan_options(auto_write = TRUE)
-
-
-brm_4 &lt;- brm(bf(wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
+<pre class="r"><code>brm_4 &lt;- brm(bf(wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
                 disc ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)
                    ),
     seed = 14,
@@ -2484,11 +2443,6 @@ pp_check(brm_7)</code></pre>
 ## Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-<pre class="r"><code>loo_compare(brm_4, brm_7)</code></pre>
-<pre><code>## Warning: Not all models have the same y variable. (&#39;yhash&#39; attributes do not match)</code></pre>
-<pre><code>##       elpd_diff se_diff
-## brm_4   0.0       0.0  
-## brm_7 -20.8      10.2</code></pre>
 <p>Binomial doesn’t seem to be too bad a fit.</p>
 <div id="binomial-with-random-person-intercept" class="section level4"
 number="3.1.6.1">
@@ -2571,13 +2525,6 @@ pp_check(brm_7_ab)</code></pre>
 ## Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-<pre class="r"><code>loo_compare(brm_2, brm_4, brm_7, brm_7_ab)</code></pre>
-<pre><code>## Warning: Not all models have the same y variable. (&#39;yhash&#39; attributes do not match)</code></pre>
-<pre><code>##          elpd_diff se_diff
-## brm_2       0.0       0.0 
-## brm_4    -235.3       5.8 
-## brm_7_ab -242.9       6.1 
-## brm_7    -256.1       7.2</code></pre>
 </div>
 </div>
 <div id="beta-model" class="section level3" number="3.1.7">
@@ -2677,35 +2624,22 @@ doesn’t look too bad.</p>
 <div id="beta-binomial-model" class="section level3" number="3.1.8">
 <h3><span class="header-section-number">3.1.8</span> Beta-binomial
 model</h3>
-<pre class="r"><code>library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = &quot;cmdstanr&quot;)
-sb_data &lt;- readRDS(&quot;data/preprocessed/wordsum/sb_data.rds&quot;) 
-rstan::rstan_options(auto_write = TRUE)
-
-
-brm_9 &lt;- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
-                # phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets))
-    family = beta_binomial(),
-    seed = 14,
-    chains = 4,
-    iter = 2000,
-    prior = prior(normal(0,1), class = &quot;b&quot;) +
-            # prior(normal(0,3), class = &quot;Intercept&quot;) +
-            prior(exponential(1), class = &quot;sd&quot;) + 
-            prior(exponential(1), class = &quot;sds&quot;),
-    file = &quot;data/brms/wordsum/sb/brm_9&quot;,
-    data = sb_data) %&gt;%
-  add_criterion(&quot;loo&quot;)</code></pre>
-<pre><code>## Warning in parallel::mclapply(X = X, FUN = FUN, mc.cores = cores, ...): all scheduled cores encountered errors in user
-## code</code></pre>
-<pre><code>## Error in exp(x): non-numeric argument to mathematical function</code></pre>
 <pre class="r"><code># 
+# brm_9 &lt;- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+#                 # phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets))
+#     family = beta_binomial(),
+#     seed = 14,
+#     chains = 4,
+#     iter = 2000,
+#     prior = prior(normal(0,1), class = &quot;b&quot;) +
+#             # prior(normal(0,3), class = &quot;Intercept&quot;) +
+#             prior(exponential(1), class = &quot;sd&quot;) + 
+#             prior(exponential(1), class = &quot;sds&quot;),
+#     file = &quot;data/brms/wordsum/sb/brm_9&quot;,
+#     data = sb_data) 
+# # 
 # pp_check(brm_9)
-# brm_9
-# loo_compare(brm_2, brm_4, brm_9)</code></pre>
+# brm_9</code></pre>
 <p>Took too long and kept crashing.</p>
 </div>
 </div>
@@ -2822,7 +2756,7 @@ p</code></pre>
 <pre class="r"><code>loo_R2(brm_2)</code></pre>
 <pre><code>## Warning: Some Pareto k diagnostic values are too high. See help(&#39;pareto-k-diagnostic&#39;) for details.</code></pre>
 <pre><code>##    Estimate Est.Error    Q2.5  Q97.5
-## R2  0.06978   0.02736 0.01507 0.1217</code></pre>
+## R2  0.06935   0.02786 0.01148 0.1208</code></pre>
 <p>The included predictors do not explain a lot of variance (~7%), so
 not a lot of adjustment can happen even if there are differences between
 the sample and the population.</p>
@@ -2848,15 +2782,7 @@ sim_pop_sample &lt;- census_sb %&gt;%
 sim_pop_sample &lt;- census_sb %&gt;% 
   sample_n(size = 100000, 
            weight = census_n, 
-           replace = TRUE) %&gt;% 
-  mutate(pid = row_number() + max(sb_data$id)) |&gt; 
-  select(pid, everything())</code></pre>
-<pre><code>## Warning: There were 2 warnings in `mutate()`.
-## The first warning was:
-## ℹ In argument: `pid = row_number() + max(sb_data$id)`.
-## Caused by warning:
-## ! Unknown or uninitialised column: `id`.
-## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.</code></pre>
+           replace = TRUE)</code></pre>
 </div>
 <div id="estimate-cft-20-r-for-those-simulated-participants"
 class="section level2" number="4.2">
@@ -2866,16 +2792,7 @@ those simulated participants</h2>
 <em>tidybayes</em>’s <code>add_predicted_draws()</code> function to draw
 1000 samples (i.e., Wordsum Scores) from the posterior for each one of
 the 100000 simulated participants in <code>sim_pop_sample</code>:</p>
-<pre class="r"><code>sim_pop_sample_with_draws2 &lt;- sim_pop_sample %&gt;%
-  add_predicted_draws(brm_7_ab, 
-                      ndraws = 1000, 
-                      seed = 810, 
-                      allow_new_levels = TRUE) %&gt;% 
-  mutate(.prediction = round(pmax(0, pmin(10, .prediction))))
-
-
-
-sim_pop_sample_with_draws &lt;- sim_pop_sample %&gt;%
+<pre class="r"><code>sim_pop_sample_with_draws &lt;- sim_pop_sample %&gt;%
   add_predicted_draws(brm_2, 
                       ndraws = 1000, 
                       seed = 810, 
@@ -2902,9 +2819,9 @@ respectively), to those scale limits.</p>
 SDs</h2>
 <p>Here we aggregate the intelligence scores by age and compute the RPP
 corrected means and SDs (+ their SEs) for each age group:</p>
-<pre class="r"><code>sim_pop_sample_with_draws &lt;- data.table::fread(&quot;data/results/wordsum/sim_pop_sample_with_draws.csv.gz&quot;)</code></pre>
-<pre><code>## Error in data.table::fread(&quot;data/results/wordsum/sim_pop_sample_with_draws.csv.gz&quot;): File &#39;data/results/wordsum/sim_pop_sample_with_draws.csv.gz&#39; does not exist or is non-readable. getwd()==&#39;/home/sc.uni-leipzig.de/fb21ogim/SOBER/MRP_Norming_Tutorial&#39;</code></pre>
-<pre class="r"><code>means_sds_and_ses_RPP &lt;- sim_pop_sample_with_draws2 %&gt;% 
+<pre class="r"><code>sim_pop_sample_with_draws &lt;- data.table::fread(&quot;data/results/wordsum/sim_pop_sample_with_draws.csv.gz&quot;)
+
+means_sds_and_ses_RPP &lt;- sim_pop_sample_with_draws %&gt;% 
   group_by(age, .draw) %&gt;% 
   summarise(mean_prediction = mean(.prediction), 
             sd_prediction = sd(.prediction)) %&gt;%
@@ -2912,10 +2829,271 @@ corrected means and SDs (+ their SEs) for each age group:</p>
   summarise(RPP_mean = mean(mean_prediction), 
             RPP_se_of_mean = sd(mean_prediction), 
             RPP_sd = sqrt(mean(sd_prediction^2)), 
-            RPP_se_of_sd = sd(sd_prediction))</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;sim_pop_sample_with_draws2&#39; not found</code></pre>
-<pre class="r"><code>means_sds_and_ses_RPP %&gt;% head(14) %&gt;% kable(digits = 2) %&gt;% kable_styling(full_width = FALSE)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;means_sds_and_ses_RPP&#39; not found</code></pre>
+            RPP_se_of_sd = sd(sd_prediction))
+
+
+means_sds_and_ses_RPP %&gt;% head(14) %&gt;% kable(digits = 2) %&gt;% kable_styling(full_width = FALSE)</code></pre>
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+age
+</th>
+<th style="text-align:right;">
+RPP_mean
+</th>
+<th style="text-align:right;">
+RPP_se_of_mean
+</th>
+<th style="text-align:right;">
+RPP_sd
+</th>
+<th style="text-align:right;">
+RPP_se_of_sd
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2.53
+</td>
+<td style="text-align:right;">
+2.20
+</td>
+<td style="text-align:right;">
+3.00
+</td>
+<td style="text-align:right;">
+2.19
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+2.60
+</td>
+<td style="text-align:right;">
+2.23
+</td>
+<td style="text-align:right;">
+3.03
+</td>
+<td style="text-align:right;">
+2.20
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+2.65
+</td>
+<td style="text-align:right;">
+2.25
+</td>
+<td style="text-align:right;">
+3.05
+</td>
+<td style="text-align:right;">
+2.21
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:right;">
+2.71
+</td>
+<td style="text-align:right;">
+2.29
+</td>
+<td style="text-align:right;">
+3.07
+</td>
+<td style="text-align:right;">
+2.22
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+2.76
+</td>
+<td style="text-align:right;">
+2.31
+</td>
+<td style="text-align:right;">
+3.09
+</td>
+<td style="text-align:right;">
+2.22
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+26
+</td>
+<td style="text-align:right;">
+2.81
+</td>
+<td style="text-align:right;">
+2.34
+</td>
+<td style="text-align:right;">
+3.11
+</td>
+<td style="text-align:right;">
+2.23
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+27
+</td>
+<td style="text-align:right;">
+2.86
+</td>
+<td style="text-align:right;">
+2.37
+</td>
+<td style="text-align:right;">
+3.13
+</td>
+<td style="text-align:right;">
+2.24
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+2.91
+</td>
+<td style="text-align:right;">
+2.40
+</td>
+<td style="text-align:right;">
+3.14
+</td>
+<td style="text-align:right;">
+2.25
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+29
+</td>
+<td style="text-align:right;">
+2.95
+</td>
+<td style="text-align:right;">
+2.43
+</td>
+<td style="text-align:right;">
+3.16
+</td>
+<td style="text-align:right;">
+2.25
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+2.99
+</td>
+<td style="text-align:right;">
+2.46
+</td>
+<td style="text-align:right;">
+3.17
+</td>
+<td style="text-align:right;">
+2.26
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+3.03
+</td>
+<td style="text-align:right;">
+2.48
+</td>
+<td style="text-align:right;">
+3.19
+</td>
+<td style="text-align:right;">
+2.27
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+3.07
+</td>
+<td style="text-align:right;">
+2.51
+</td>
+<td style="text-align:right;">
+3.20
+</td>
+<td style="text-align:right;">
+2.27
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+33
+</td>
+<td style="text-align:right;">
+3.11
+</td>
+<td style="text-align:right;">
+2.54
+</td>
+<td style="text-align:right;">
+3.21
+</td>
+<td style="text-align:right;">
+2.28
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+3.15
+</td>
+<td style="text-align:right;">
+2.57
+</td>
+<td style="text-align:right;">
+3.22
+</td>
+<td style="text-align:right;">
+2.28
+</td>
+</tr>
+</tbody>
+</table>
 <p>This code chunk first aggregates by age and posterior draw (1000) to
 compute the mean and SD of Wordsum estimates across the 100000 simulated
 participants. Then it computes the means and SDs across the draws (which
@@ -2950,7 +3128,11 @@ iqs_linear &lt;- sim_pop_sample_with_draws %&gt;%
   group_by(age, wordsum_score) %&gt;% 
   summarise(RPP_IQ = round(mean(iq_score)),
             RPP_T = round(mean(T_score)))</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;sim_pop_sample_with_draws&#39; not found</code></pre>
+<pre><code>## Error in `summarise()`:
+## ℹ In argument: `RPP_IQ = round(mean(iq_score))`.
+## ℹ In group 1: `age = 21` and `wordsum_score = 0`.
+## Caused by error:
+## ! object &#39;iq_score&#39; not found</code></pre>
 <pre class="r"><code>iqs_linear %&gt;% head(14) %&gt;% kable %&gt;% kable_styling(full_width = FALSE)</code></pre>
 <pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs_linear&#39; not found</code></pre>
 <p>Due to the left skewed distributions linear transformation probably
@@ -2969,10 +3151,225 @@ transformed / normal rank transformed) IQs</h3>
          T_score = normal_transformed_score * 10 + 50) %&gt;%
   group_by(age, wordsum_score) %&gt;%
   summarise(RPP_IQ = round(mean(iq_score)),
-            RPP_T = round(mean(T_score)))</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;sim_pop_sample_with_draws&#39; not found</code></pre>
-<pre class="r"><code>iqs_normalised %&gt;% head(14) %&gt;% kable %&gt;% kable_styling(full_width = FALSE)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs_normalised&#39; not found</code></pre>
+            RPP_T = round(mean(T_score)))
+
+iqs_normalised %&gt;% head(14) %&gt;% kable %&gt;% kable_styling(full_width = FALSE)</code></pre>
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+age
+</th>
+<th style="text-align:right;">
+wordsum_score
+</th>
+<th style="text-align:right;">
+RPP_IQ
+</th>
+<th style="text-align:right;">
+RPP_T
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+96
+</td>
+<td style="text-align:right;">
+47
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+50
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+50
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+50
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+103
+</td>
+<td style="text-align:right;">
+52
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+105
+</td>
+<td style="text-align:right;">
+54
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+107
+</td>
+<td style="text-align:right;">
+55
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+110
+</td>
+<td style="text-align:right;">
+56
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+109
+</td>
+<td style="text-align:right;">
+56
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+111
+</td>
+<td style="text-align:right;">
+57
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+111
+</td>
+<td style="text-align:right;">
+58
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+96
+</td>
+<td style="text-align:right;">
+47
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+50
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+101
+</td>
+<td style="text-align:right;">
+50
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="percentile-based-scores" class="section level3" number="5.2.3">
 <h3><span class="header-section-number">5.2.3</span> Percentile based
@@ -2985,10 +3382,180 @@ function values to standard Gaussian quantiles and then to IQs/Ts.</p>
   mutate(n = n(),
          percentile = (rank(wordsum_score) - 0.5) / n) %&gt;%
   group_by(age, wordsum_score) %&gt;%
-  summarise(RPP_percentile = mean(percentile))</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;sim_pop_sample_with_draws&#39; not found</code></pre>
-<pre class="r"><code>percentiles %&gt;% head(14) %&gt;% kable %&gt;% kable_styling(full_width = FALSE)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;percentiles&#39; not found</code></pre>
+  summarise(RPP_percentile = mean(percentile))
+
+percentiles %&gt;% head(14) %&gt;% kable %&gt;% kable_styling(full_width = FALSE)</code></pre>
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+age
+</th>
+<th style="text-align:right;">
+wordsum_score
+</th>
+<th style="text-align:right;">
+RPP_percentile
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.3986
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.5074
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.5098
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0.4929
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.5743
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0.6119
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0.6567
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+0.6982
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0.6882
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0.7205
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+0.7701
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.3982
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.5039
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.5161
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
@@ -3106,20 +3673,21 @@ raw_iqs_normalised &lt;- sb_data %&gt;%
 
 iqs &lt;- iqs_normalised %&gt;% 
   left_join(RP_iqs_normalised, by = c(&quot;age&quot;, &quot;wordsum_score&quot;)) %&gt;% 
-  left_join(raw_iqs_normalised, by = c(&quot;age&quot;, &quot;wordsum_score&quot;)) </code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs_normalised&#39; not found</code></pre>
-<pre class="r"><code>mean(iqs$RPP_IQ-iqs$RP_IQ)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+  left_join(raw_iqs_normalised, by = c(&quot;age&quot;, &quot;wordsum_score&quot;)) 
+
+
+mean(iqs$RPP_IQ-iqs$RP_IQ)</code></pre>
+<pre><code>## [1] 0.1006</code></pre>
 <pre class="r"><code>mean(abs(iqs$RPP_IQ-iqs$RP_IQ))</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+<pre><code>## [1] 0.4952</code></pre>
 <pre class="r"><code>max(iqs$RPP_IQ-iqs$RP_IQ)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+<pre><code>## [1] 3</code></pre>
 <pre class="r"><code>mean(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+<pre><code>## [1] 3.401</code></pre>
 <pre class="r"><code>mean(abs(iqs$RPP_IQ-iqs$Raw_IQ), na.rm = T)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+<pre><code>## [1] 11.52</code></pre>
 <pre class="r"><code>max(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)</code></pre>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;iqs&#39; not found</code></pre>
+<pre><code>## [1] 32</code></pre>
 <p>RPP IQs were on average 1.6 IQ points larger than raw ones (absolute
 difference 4.9, max difference 20). Again illustrating that
 poststratification made an incremental difference beyond the
@@ -3246,9 +3814,8 @@ sb_nor_bin[-1]</code></pre>
   function(x) x  # leave binomial predicitons as is# leave binomial predicitons as is
 )
 
-source(&quot;age_norm_comparisons.R&quot;)
 
-debug(age_norm_comparisons)
+
 
 
 sb_nor_bin2 &lt;- age_norm_comparisons(
@@ -3270,452 +3837,10 @@ sb_nor_bin2 &lt;- age_norm_comparisons(
   # &quot;#EE4C97FF&quot;
 ),
   output_file = &quot;data/results/wordsum/sb_nor_bin2.rds&quot;
-  )</code></pre>
-<pre><code>## debugging in: age_norm_comparisons(brm_2, brm_7, brm_7_ab, ps_table = census_sb, 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, &quot;RPP, binomial&quot;, 
-##         &quot;RPP, binomial + ID intercept&quot;)), palette = c(&quot;#BC3C29FF&quot;, 
-##         &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;, &quot;#7876B1FF&quot;), output_file = &quot;data/results/wordsum/sb_nor_bin2.rds&quot;)
-## debug: {
-##     if (file.exists(output_file)) {
-##         message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##         existing_data &lt;- readRDS(output_file)
-##         means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##         overall_estimates &lt;- existing_data$overall_estimates
-##         percentile_data &lt;- existing_data$percentile_data
-##         plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##             ps_table)
-##         percentile_plot &lt;- NULL
-##         if (!is.null(percentile_data)) {
-##             approach_set &lt;- levels(percentile_data$Source)
-##             if (&quot;Raw&quot; %in% approach_set) {
-##                 color_values &lt;- palette
-##             }
-##             else {
-##                 color_values &lt;- palette[-1]
-##             }
-##             baseMaxLabelLen &lt;- if (is.null(labels)) 
-##                 1
-##             else max(nchar(labels))
-##             maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##                 na.rm = TRUE)
-##             myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##                 1)/1.7
-##             max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##             percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##                 y = Raw_score, color = Source, group = interaction(Source, 
-##                   percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##                 linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##                 max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##                 myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##                 name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##                 age == max_age_val, show_text, !is.na(line_label)), 
-##                 ggplot2::aes(label = line_label), nudge_x = 1, 
-##                 hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##                 y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##                 hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.x = ggplot2::element_blank(), 
-##                 panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                   linewidth = 0.3), legend.position = &quot;top&quot;)
-##         }
-##         final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##             overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##             SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##             percentile_plot = percentile_plot)
-##         rm(existing_data, plots, percentile_data)
-##         gc(verbose = FALSE)
-##         return(final_list)
-##     }
-##     if (is.null(RP)) {
-##         RP &lt;- &quot;census&quot;
-##     }
-##     if (is.character(RP) &amp;&amp; length(RP) == 1) {
-##         RP &lt;- c(RP)
-##     }
-##     brms_models &lt;- list(...)
-##     raw_call_names &lt;- sapply(substitute(list(...))[-1], deparse)
-##     if (!all(sapply(brms_models, inherits, &quot;brmsfit&quot;))) {
-##         stop(&quot;All &#39;...&#39; must be brmsfit models.&quot;)
-##     }
-##     nModels &lt;- length(brms_models)
-##     if (is.null(ps_variables)) {
-##         ps_variables &lt;- lapply(brms_models, function(model) {
-##             all.vars(model$formula$formula)[-1]
-##         })
-##     }
-##     else if (!is.list(ps_variables)) {
-##         ps_variables &lt;- replicate(nModels, ps_variables, simplify = FALSE)
-##     }
-##     else if (length(ps_variables) != nModels) {
-##         stop(&quot;If ps_variables is a list, its length must match number of brms models.&quot;)
-##     }
-##     if (!is.null(prediction_transform)) {
-##         if (is.function(prediction_transform)) {
-##             prediction_transform &lt;- replicate(nModels, prediction_transform, 
-##                 simplify = FALSE)
-##         }
-##         else if (is.list(prediction_transform)) {
-##             if (length(prediction_transform) != nModels) {
-##                 stop(&quot;&#39;prediction_transform&#39; must match # of brms models if it&#39;s a list.&quot;)
-##             }
-##         }
-##         else {
-##             stop(&quot;&#39;prediction_transform&#39; must be NULL or a function or list of functions.&quot;)
-##         }
-##     }
-##     else {
-##         prediction_transform &lt;- replicate(nModels, NULL, simplify = FALSE)
-##     }
-##     first_mod_data &lt;- brms_models[[1]]$data
-##     out_name &lt;- all.vars(brms_models[[1]]$formula$formula)[1]
-##     if (is.na(out_name)) {
-##         stop(&quot;Could not detect outcome from first brms model (multi-param?).&quot;)
-##     }
-##     first_mod_data[[out_name]] &lt;- as.numeric(as.character(first_mod_data[[out_name]]))
-##     means_sds_and_ses_raw &lt;- first_mod_data %&gt;% dplyr::mutate(age = floor(age)) %&gt;% 
-##         dplyr::group_by(age) %&gt;% dplyr::summarise(Raw_n = dplyr::n(), 
-##         Raw_mean = mean(.data[[out_name]], na.rm = TRUE), Raw_sd = sd(.data[[out_name]], 
-##             na.rm = TRUE), Raw_seOfmean = Raw_sd/sqrt(Raw_n), 
-##         .groups = &quot;drop&quot;)
-##     row_level_draws &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]] &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]][[raw_call_names[1]]] &lt;- first_mod_data %&gt;% 
-##         dplyr::mutate(age = floor(age), .draw = 1, .prediction = .data[[out_name]])
-##     age_level_list &lt;- list()
-##     for (this_approach in RP) {
-##         prefix &lt;- if (this_approach == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else &quot;RP_&quot;
-##         approach_age_wide_list &lt;- list()
-##         row_level_draws[[this_approach]] &lt;- list()
-##         for (i in seq_along(brms_models)) {
-##             model &lt;- brms_models[[i]]
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_name &lt;- paste0(prefix, &quot;brm_&quot;, short_name)
-##             this_ps_vars &lt;- ps_variables[[i]]
-##             if (this_approach == &quot;census&quot;) {
-##                 sim_data &lt;- ps_table %&gt;% dplyr::filter(census_n != 
-##                   0) %&gt;% dplyr::ungroup() %&gt;% dplyr::sample_n(size = sim_size, 
-##                   weight = census_n, replace = TRUE)
-##             }
-##             else if (this_approach == &quot;norming_sample&quot;) {
-##                 sim_data &lt;- first_mod_data %&gt;% dplyr::select(dplyr::all_of(this_ps_vars)) %&gt;% 
-##                   dplyr::mutate(age = floor(age)) %&gt;% dplyr::filter(between(age, 
-##                   min(ps_table$age), max(ps_table$age))) %&gt;% 
-##                   dplyr::group_by(dplyr::across(dplyr::everything())) %&gt;% 
-##                   dplyr::summarise(Raw_n = dplyr::n(), .groups = &quot;drop&quot;) %&gt;% 
-##                   dplyr::sample_n(size = sim_size, weight = Raw_n, 
-##                     replace = TRUE)
-##             }
-##             else {
-##                 stop(&quot;RP must be &#39;census&#39; or &#39;norming_sample&#39;.&quot;)
-##             }
-##             sim_data_with_draws &lt;- sim_data %&gt;% mutate(pid = row_number() + 
-##                 100000) %&gt;% select(pid, everything()) %&gt;% tidybayes::add_predicted_draws(model, 
-##                 ndraws = 1000, seed = 810, re_formula = re_formula, 
-##                 allow_new_levels = TRUE)
-##             fun_pred &lt;- prediction_transform[[i]]
-##             if (!is.null(fun_pred)) {
-##                 sim_data_with_draws$.prediction &lt;- fun_pred(sim_data_with_draws$.prediction)
-##             }
-##             summary_df &lt;- sim_data_with_draws %&gt;% dplyr::group_by(age, 
-##                 .draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::group_by(age) %&gt;% dplyr::summarise(`:=`(!!paste0(full_name, 
-##                 &quot;_mean&quot;), mean(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfmean&quot;), stats::sd(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_sd&quot;), sqrt(mean(sd_prediction^2))), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfsd&quot;), stats::sd(sd_prediction)), .groups = &quot;drop&quot;)
-##             approach_age_wide_list[[model_name]] &lt;- summary_df
-##             row_level_draws[[this_approach]][[model_name]] &lt;- sim_data_with_draws
-##         }
-##         approach_age_wide &lt;- purrr::reduce(approach_age_wide_list, 
-##             dplyr::left_join, by = &quot;age&quot;)
-##         age_level_list[[this_approach]] &lt;- approach_age_wide
-##     }
-##     if (length(age_level_list) == 1) {
-##         combined_results &lt;- age_level_list[[1]]
-##     }
-##     else if (length(age_level_list) &gt; 1) {
-##         combined_results &lt;- purrr::reduce(age_level_list, dplyr::left_join, 
-##             by = &quot;age&quot;)
-##     }
-##     else {
-##         combined_results &lt;- means_sds_and_ses_raw
-##     }
-##     combined_results &lt;- combined_results %&gt;% dplyr::left_join(means_sds_and_ses_raw, 
-##         by = &quot;age&quot;)
-##     means_ns_sds_and_ses &lt;- combined_results %&gt;% tidyr::pivot_longer(-age, 
-##         names_to = c(&quot;source&quot;, &quot;.value&quot;), names_pattern = &quot;(.*)_(.*)&quot;)
-##     final_levels &lt;- &quot;Raw&quot;
-##     for (i in seq_along(brms_models)) {
-##         model_name &lt;- raw_call_names[i]
-##         short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##         if (&quot;census&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RPP_brm_&quot;, 
-##                 short_name))
-##         }
-##         if (&quot;norming_sample&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RP_brm_&quot;, 
-##                 short_name))
-##         }
-##     }
-##     existing_sources &lt;- unique(means_ns_sds_and_ses$source)
-##     level_order &lt;- final_levels[final_levels %in% existing_sources]
-##     leftover &lt;- setdiff(existing_sources, level_order)
-##     if (length(leftover) &gt; 0) {
-##         level_order &lt;- c(level_order, leftover)
-##     }
-##     means_ns_sds_and_ses &lt;- means_ns_sds_and_ses %&gt;% dplyr::mutate(source = factor(source, 
-##         levels = level_order))
-##     if (!is.null(labels)) {
-##         if (length(labels) != length(level_order)) {
-##             stop(&quot;Length of &#39;labels&#39; must match final # of sources.\n&quot;, 
-##                 &quot;We have &quot;, length(level_order), &quot; sources in order: &quot;, 
-##                 paste(level_order, collapse = &quot;, &quot;), &quot;\n&quot;, &quot;But you supplied &quot;, 
-##                 length(labels), &quot; labels.&quot;)
-##         }
-##         means_ns_sds_and_ses$source &lt;- forcats::fct_relabel(means_ns_sds_and_ses$source, 
-##             function(x) labels[match(x, level_order)])
-##     }
-##     overall_estimates &lt;- list()
-##     for (appr in names(row_level_draws)) {
-##         prefix &lt;- if (appr == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else if (appr == &quot;norming_sample&quot;) 
-##             &quot;RP_&quot;
-##         else &quot;Raw_&quot;
-##         for (i in seq_along(brms_models)) {
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_label &lt;- if (appr == &quot;raw&quot;) {
-##                 &quot;Raw&quot;
-##             }
-##             else {
-##                 paste0(prefix, &quot;brm_&quot;, short_name)
-##             }
-##             df_sim &lt;- row_level_draws[[appr]][[model_name]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             sum_df &lt;- df_sim %&gt;% dplyr::group_by(.draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::summarise(Mean = mean(mean_prediction), 
-##                   SE_of_Mean = stats::sd(mean_prediction), SD = sqrt(mean(sd_prediction^2)), 
-##                   SE_of_SD = stats::sd(sd_prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::mutate(Model = full_label)
-##             overall_estimates[[length(overall_estimates) + 1]] &lt;- sum_df
-##         }
-##     }
-##     overall_estimates &lt;- dplyr::bind_rows(overall_estimates)
-##     approach_set &lt;- setdiff(names(row_level_draws), &quot;raw&quot;)
-##     target_p &lt;- c(0.01, 0.05, 0.5, 0.95, 0.99)
-##     df_percentile_curves &lt;- list()
-##     for (appr_name in approach_set) {
-##         for (i in seq_along(brms_models)) {
-##             modn &lt;- raw_call_names[i]
-##             shortn &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, modn)
-##             prefix_line &lt;- if (appr_name == &quot;census&quot;) 
-##                 &quot;RPP_&quot;
-##             else &quot;RP_&quot;
-##             df_sim &lt;- row_level_draws[[appr_name]][[modn]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             if (!is.numeric(df_sim$.prediction)) 
-##                 next
-##             source_string &lt;- paste0(prefix_line, &quot;brm_&quot;, shortn)
-##             df_percent &lt;- df_sim %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::arrange(.prediction, .by_group = TRUE) %&gt;% 
-##                 dplyr::mutate(N = dplyr::n(), percentile = (dplyr::row_number() - 
-##                   0.5)/N) %&gt;% dplyr::ungroup() %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::summarise(pvals = list(target_p), scores = list(stats::approx(x = percentile, 
-##                   y = .prediction, xout = target_p, ties = &quot;ordered&quot;)$y), 
-##                   .groups = &quot;drop&quot;) %&gt;% tidyr::unnest(cols = c(pvals, 
-##                 scores)) %&gt;% dplyr::rename(percentile_value = pvals, 
-##                 Raw_score = scores) %&gt;% dplyr::mutate(Source = source_string)
-##             df_percentile_curves[[length(df_percentile_curves) + 
-##                 1]] &lt;- df_percent
-##         }
-##     }
-##     df_percentile_final &lt;- dplyr::bind_rows(df_percentile_curves) %&gt;% 
-##         dplyr::mutate(percentile_label = dplyr::case_when(abs(percentile_value - 
-##             0.01) &lt; 0.000000001 ~ &quot;1st percentile&quot;, abs(percentile_value - 
-##             0.05) &lt; 0.000000001 ~ &quot;5th percentile&quot;, abs(percentile_value - 
-##             0.5) &lt; 0.000000001 ~ &quot;50th percentile&quot;, abs(percentile_value - 
-##             0.95) &lt; 0.000000001 ~ &quot;95th percentile&quot;, abs(percentile_value - 
-##             0.99) &lt; 0.000000001 ~ &quot;99th percentile&quot;, TRUE ~ paste0(round(100 * 
-##             percentile_value, 1), &quot;th percentile&quot;)))
-##     df_percentile_final$Source &lt;- factor(df_percentile_final$Source, 
-##         levels = level_order[level_order != &quot;Raw&quot;])
-##     if (!is.null(labels) &amp;&amp; length(labels) == length(level_order)) {
-##         adjusted_labels &lt;- labels[-1]
-##         level_order_no_raw &lt;- level_order[level_order != &quot;Raw&quot;]
-##         if (length(adjusted_labels) != length(level_order_no_raw)) {
-##             stop(&quot;Number of labels doesn&#39;t match number of sources for percentiles.&quot;)
-##         }
-##         df_percentile_final$Source &lt;- forcats::fct_relabel(df_percentile_final$Source, 
-##             function(x) adjusted_labels[match(x, level_order_no_raw)])
-##     }
-##     methodLevels &lt;- levels(df_percentile_final$Source)
-##     df_percentile_final &lt;- df_percentile_final %&gt;% dplyr::mutate(show_text = Source == 
-##         methodLevels[1], line_label = dplyr::if_else(show_text, 
-##         percentile_label, NA_character_))
-##     percentile_data &lt;- df_percentile_final
-##     final_data &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, percentile_data = percentile_data)
-##     saveRDS(final_data, file = output_file, compress = &quot;xz&quot;)
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     approach_set &lt;- levels(percentile_data$Source)
-##     color_values &lt;- palette[-1]
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-##     list(means_ns_sds_and_ses = means_ns_sds_and_ses, overall_estimates = overall_estimates, 
-##         means_plot = plots$means_plot, SDs_plot = plots$SDs_plot, 
-##         SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## }
-## debug: if (file.exists(output_file)) {
-##     message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##     existing_data &lt;- readRDS(output_file)
-##     means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##     overall_estimates &lt;- existing_data$overall_estimates
-##     percentile_data &lt;- existing_data$percentile_data
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     percentile_plot &lt;- NULL
-##     if (!is.null(percentile_data)) {
-##         approach_set &lt;- levels(percentile_data$Source)
-##         if (&quot;Raw&quot; %in% approach_set) {
-##             color_values &lt;- palette
-##         }
-##         else {
-##             color_values &lt;- palette[-1]
-##         }
-##         baseMaxLabelLen &lt;- if (is.null(labels)) 
-##             1
-##         else max(nchar(labels))
-##         maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##             na.rm = TRUE)
-##         myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##             1)/1.7
-##         max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##         percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##             y = Raw_score, color = Source, group = interaction(Source, 
-##                 percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##             linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##             max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##             myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##             name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##             age == max_age_val, show_text, !is.na(line_label)), 
-##             ggplot2::aes(label = line_label), nudge_x = 1, hjust = 0, 
-##             family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, y = &quot;Test score&quot;, 
-##             color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##             hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##             panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##             panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                 linewidth = 0.3), legend.position = &quot;top&quot;)
-##     }
-##     final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##         SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##         percentile_plot = percentile_plot)
-##     rm(existing_data, plots, percentile_data)
-##     gc(verbose = FALSE)
-##     return(final_list)
-## }
-## debug: message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-## debug: existing_data &lt;- readRDS(output_file)
-## debug: means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-## debug: overall_estimates &lt;- existing_data$overall_estimates
-## debug: percentile_data &lt;- existing_data$percentile_data
-## debug: plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, ps_table)
-## debug: percentile_plot &lt;- NULL
-## debug: if (!is.null(percentile_data)) {
-##     approach_set &lt;- levels(percentile_data$Source)
-##     if (&quot;Raw&quot; %in% approach_set) {
-##         color_values &lt;- palette
-##     }
-##     else {
-##         color_values &lt;- palette[-1]
-##     }
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-## }
-## debug: approach_set &lt;- levels(percentile_data$Source)
-## debug: if (&quot;Raw&quot; %in% approach_set) {
-##     color_values &lt;- palette
-## } else {
-##     color_values &lt;- palette[-1]
-## }
-## debug: color_values &lt;- palette[-1]
-## debug: baseMaxLabelLen &lt;- if (is.null(labels)) 1 else max(nchar(labels))
-## debug: max(nchar(labels))
-## debug: maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-## debug: myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-## debug: max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-## debug: percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##     y = Raw_score, color = Source, group = interaction(Source, 
-##         percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##     linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##     max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##     myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##     name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##     age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##     nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##     y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##     hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##     panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##     panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##         linewidth = 0.3), legend.position = &quot;top&quot;)
-## debug: final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##     overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##     SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## debug: rm(existing_data, plots, percentile_data)
-## debug: gc(verbose = FALSE)
-## debug: return(final_list)
-## exiting from: age_norm_comparisons(brm_2, brm_7, brm_7_ab, ps_table = census_sb, 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, &quot;RPP, binomial&quot;, 
-##         &quot;RPP, binomial + ID intercept&quot;)), palette = c(&quot;#BC3C29FF&quot;, 
-##         &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;, &quot;#7876B1FF&quot;), output_file = &quot;data/results/wordsum/sb_nor_bin2.rds&quot;)</code></pre>
-<pre class="r"><code>sb_nor_bin2</code></pre>
+  )
+
+
+sb_nor_bin2</code></pre>
 <pre><code>## $means_ns_sds_and_ses
 ## # A tibble: 188 × 7
 ##      age source                        mean seOfmean    sd  seOfsd     n
@@ -3784,454 +3909,10 @@ sb_nor_beta &lt;- age_norm_comparisons(
   # &quot;#EE4C97FF&quot;
 ),
   output_file = &quot;data/results/wordsum/sb_nor_beta.rds&quot;
-  )</code></pre>
-<pre><code>## debugging in: age_norm_comparisons(brm_2, brm_8, ps_table = census_sb, ps_variables = c(&quot;age&quot;, 
-##     &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, 
-##     &quot;region_birth&quot;, &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, &quot;RPP, beta&quot;)), 
-##     palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_nor_beta.rds&quot;)
-## debug: {
-##     if (file.exists(output_file)) {
-##         message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##         existing_data &lt;- readRDS(output_file)
-##         means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##         overall_estimates &lt;- existing_data$overall_estimates
-##         percentile_data &lt;- existing_data$percentile_data
-##         plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##             ps_table)
-##         percentile_plot &lt;- NULL
-##         if (!is.null(percentile_data)) {
-##             approach_set &lt;- levels(percentile_data$Source)
-##             if (&quot;Raw&quot; %in% approach_set) {
-##                 color_values &lt;- palette
-##             }
-##             else {
-##                 color_values &lt;- palette[-1]
-##             }
-##             baseMaxLabelLen &lt;- if (is.null(labels)) 
-##                 1
-##             else max(nchar(labels))
-##             maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##                 na.rm = TRUE)
-##             myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##                 1)/1.7
-##             max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##             percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##                 y = Raw_score, color = Source, group = interaction(Source, 
-##                   percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##                 linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##                 max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##                 myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##                 name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##                 age == max_age_val, show_text, !is.na(line_label)), 
-##                 ggplot2::aes(label = line_label), nudge_x = 1, 
-##                 hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##                 y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##                 hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.x = ggplot2::element_blank(), 
-##                 panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                   linewidth = 0.3), legend.position = &quot;top&quot;)
-##         }
-##         final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##             overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##             SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##             percentile_plot = percentile_plot)
-##         rm(existing_data, plots, percentile_data)
-##         gc(verbose = FALSE)
-##         return(final_list)
-##     }
-##     if (is.null(RP)) {
-##         RP &lt;- &quot;census&quot;
-##     }
-##     if (is.character(RP) &amp;&amp; length(RP) == 1) {
-##         RP &lt;- c(RP)
-##     }
-##     brms_models &lt;- list(...)
-##     raw_call_names &lt;- sapply(substitute(list(...))[-1], deparse)
-##     if (!all(sapply(brms_models, inherits, &quot;brmsfit&quot;))) {
-##         stop(&quot;All &#39;...&#39; must be brmsfit models.&quot;)
-##     }
-##     nModels &lt;- length(brms_models)
-##     if (is.null(ps_variables)) {
-##         ps_variables &lt;- lapply(brms_models, function(model) {
-##             all.vars(model$formula$formula)[-1]
-##         })
-##     }
-##     else if (!is.list(ps_variables)) {
-##         ps_variables &lt;- replicate(nModels, ps_variables, simplify = FALSE)
-##     }
-##     else if (length(ps_variables) != nModels) {
-##         stop(&quot;If ps_variables is a list, its length must match number of brms models.&quot;)
-##     }
-##     if (!is.null(prediction_transform)) {
-##         if (is.function(prediction_transform)) {
-##             prediction_transform &lt;- replicate(nModels, prediction_transform, 
-##                 simplify = FALSE)
-##         }
-##         else if (is.list(prediction_transform)) {
-##             if (length(prediction_transform) != nModels) {
-##                 stop(&quot;&#39;prediction_transform&#39; must match # of brms models if it&#39;s a list.&quot;)
-##             }
-##         }
-##         else {
-##             stop(&quot;&#39;prediction_transform&#39; must be NULL or a function or list of functions.&quot;)
-##         }
-##     }
-##     else {
-##         prediction_transform &lt;- replicate(nModels, NULL, simplify = FALSE)
-##     }
-##     first_mod_data &lt;- brms_models[[1]]$data
-##     out_name &lt;- all.vars(brms_models[[1]]$formula$formula)[1]
-##     if (is.na(out_name)) {
-##         stop(&quot;Could not detect outcome from first brms model (multi-param?).&quot;)
-##     }
-##     first_mod_data[[out_name]] &lt;- as.numeric(as.character(first_mod_data[[out_name]]))
-##     means_sds_and_ses_raw &lt;- first_mod_data %&gt;% dplyr::mutate(age = floor(age)) %&gt;% 
-##         dplyr::group_by(age) %&gt;% dplyr::summarise(Raw_n = dplyr::n(), 
-##         Raw_mean = mean(.data[[out_name]], na.rm = TRUE), Raw_sd = sd(.data[[out_name]], 
-##             na.rm = TRUE), Raw_seOfmean = Raw_sd/sqrt(Raw_n), 
-##         .groups = &quot;drop&quot;)
-##     row_level_draws &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]] &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]][[raw_call_names[1]]] &lt;- first_mod_data %&gt;% 
-##         dplyr::mutate(age = floor(age), .draw = 1, .prediction = .data[[out_name]])
-##     age_level_list &lt;- list()
-##     for (this_approach in RP) {
-##         prefix &lt;- if (this_approach == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else &quot;RP_&quot;
-##         approach_age_wide_list &lt;- list()
-##         row_level_draws[[this_approach]] &lt;- list()
-##         for (i in seq_along(brms_models)) {
-##             model &lt;- brms_models[[i]]
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_name &lt;- paste0(prefix, &quot;brm_&quot;, short_name)
-##             this_ps_vars &lt;- ps_variables[[i]]
-##             if (this_approach == &quot;census&quot;) {
-##                 sim_data &lt;- ps_table %&gt;% dplyr::filter(census_n != 
-##                   0) %&gt;% dplyr::ungroup() %&gt;% dplyr::sample_n(size = sim_size, 
-##                   weight = census_n, replace = TRUE)
-##             }
-##             else if (this_approach == &quot;norming_sample&quot;) {
-##                 sim_data &lt;- first_mod_data %&gt;% dplyr::select(dplyr::all_of(this_ps_vars)) %&gt;% 
-##                   dplyr::mutate(age = floor(age)) %&gt;% dplyr::filter(between(age, 
-##                   min(ps_table$age), max(ps_table$age))) %&gt;% 
-##                   dplyr::group_by(dplyr::across(dplyr::everything())) %&gt;% 
-##                   dplyr::summarise(Raw_n = dplyr::n(), .groups = &quot;drop&quot;) %&gt;% 
-##                   dplyr::sample_n(size = sim_size, weight = Raw_n, 
-##                     replace = TRUE)
-##             }
-##             else {
-##                 stop(&quot;RP must be &#39;census&#39; or &#39;norming_sample&#39;.&quot;)
-##             }
-##             sim_data_with_draws &lt;- sim_data %&gt;% mutate(pid = row_number() + 
-##                 100000) %&gt;% select(pid, everything()) %&gt;% tidybayes::add_predicted_draws(model, 
-##                 ndraws = 1000, seed = 810, re_formula = re_formula, 
-##                 allow_new_levels = TRUE)
-##             fun_pred &lt;- prediction_transform[[i]]
-##             if (!is.null(fun_pred)) {
-##                 sim_data_with_draws$.prediction &lt;- fun_pred(sim_data_with_draws$.prediction)
-##             }
-##             summary_df &lt;- sim_data_with_draws %&gt;% dplyr::group_by(age, 
-##                 .draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::group_by(age) %&gt;% dplyr::summarise(`:=`(!!paste0(full_name, 
-##                 &quot;_mean&quot;), mean(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfmean&quot;), stats::sd(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_sd&quot;), sqrt(mean(sd_prediction^2))), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfsd&quot;), stats::sd(sd_prediction)), .groups = &quot;drop&quot;)
-##             approach_age_wide_list[[model_name]] &lt;- summary_df
-##             row_level_draws[[this_approach]][[model_name]] &lt;- sim_data_with_draws
-##         }
-##         approach_age_wide &lt;- purrr::reduce(approach_age_wide_list, 
-##             dplyr::left_join, by = &quot;age&quot;)
-##         age_level_list[[this_approach]] &lt;- approach_age_wide
-##     }
-##     if (length(age_level_list) == 1) {
-##         combined_results &lt;- age_level_list[[1]]
-##     }
-##     else if (length(age_level_list) &gt; 1) {
-##         combined_results &lt;- purrr::reduce(age_level_list, dplyr::left_join, 
-##             by = &quot;age&quot;)
-##     }
-##     else {
-##         combined_results &lt;- means_sds_and_ses_raw
-##     }
-##     combined_results &lt;- combined_results %&gt;% dplyr::left_join(means_sds_and_ses_raw, 
-##         by = &quot;age&quot;)
-##     means_ns_sds_and_ses &lt;- combined_results %&gt;% tidyr::pivot_longer(-age, 
-##         names_to = c(&quot;source&quot;, &quot;.value&quot;), names_pattern = &quot;(.*)_(.*)&quot;)
-##     final_levels &lt;- &quot;Raw&quot;
-##     for (i in seq_along(brms_models)) {
-##         model_name &lt;- raw_call_names[i]
-##         short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##         if (&quot;census&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RPP_brm_&quot;, 
-##                 short_name))
-##         }
-##         if (&quot;norming_sample&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RP_brm_&quot;, 
-##                 short_name))
-##         }
-##     }
-##     existing_sources &lt;- unique(means_ns_sds_and_ses$source)
-##     level_order &lt;- final_levels[final_levels %in% existing_sources]
-##     leftover &lt;- setdiff(existing_sources, level_order)
-##     if (length(leftover) &gt; 0) {
-##         level_order &lt;- c(level_order, leftover)
-##     }
-##     means_ns_sds_and_ses &lt;- means_ns_sds_and_ses %&gt;% dplyr::mutate(source = factor(source, 
-##         levels = level_order))
-##     if (!is.null(labels)) {
-##         if (length(labels) != length(level_order)) {
-##             stop(&quot;Length of &#39;labels&#39; must match final # of sources.\n&quot;, 
-##                 &quot;We have &quot;, length(level_order), &quot; sources in order: &quot;, 
-##                 paste(level_order, collapse = &quot;, &quot;), &quot;\n&quot;, &quot;But you supplied &quot;, 
-##                 length(labels), &quot; labels.&quot;)
-##         }
-##         means_ns_sds_and_ses$source &lt;- forcats::fct_relabel(means_ns_sds_and_ses$source, 
-##             function(x) labels[match(x, level_order)])
-##     }
-##     overall_estimates &lt;- list()
-##     for (appr in names(row_level_draws)) {
-##         prefix &lt;- if (appr == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else if (appr == &quot;norming_sample&quot;) 
-##             &quot;RP_&quot;
-##         else &quot;Raw_&quot;
-##         for (i in seq_along(brms_models)) {
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_label &lt;- if (appr == &quot;raw&quot;) {
-##                 &quot;Raw&quot;
-##             }
-##             else {
-##                 paste0(prefix, &quot;brm_&quot;, short_name)
-##             }
-##             df_sim &lt;- row_level_draws[[appr]][[model_name]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             sum_df &lt;- df_sim %&gt;% dplyr::group_by(.draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::summarise(Mean = mean(mean_prediction), 
-##                   SE_of_Mean = stats::sd(mean_prediction), SD = sqrt(mean(sd_prediction^2)), 
-##                   SE_of_SD = stats::sd(sd_prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::mutate(Model = full_label)
-##             overall_estimates[[length(overall_estimates) + 1]] &lt;- sum_df
-##         }
-##     }
-##     overall_estimates &lt;- dplyr::bind_rows(overall_estimates)
-##     approach_set &lt;- setdiff(names(row_level_draws), &quot;raw&quot;)
-##     target_p &lt;- c(0.01, 0.05, 0.5, 0.95, 0.99)
-##     df_percentile_curves &lt;- list()
-##     for (appr_name in approach_set) {
-##         for (i in seq_along(brms_models)) {
-##             modn &lt;- raw_call_names[i]
-##             shortn &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, modn)
-##             prefix_line &lt;- if (appr_name == &quot;census&quot;) 
-##                 &quot;RPP_&quot;
-##             else &quot;RP_&quot;
-##             df_sim &lt;- row_level_draws[[appr_name]][[modn]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             if (!is.numeric(df_sim$.prediction)) 
-##                 next
-##             source_string &lt;- paste0(prefix_line, &quot;brm_&quot;, shortn)
-##             df_percent &lt;- df_sim %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::arrange(.prediction, .by_group = TRUE) %&gt;% 
-##                 dplyr::mutate(N = dplyr::n(), percentile = (dplyr::row_number() - 
-##                   0.5)/N) %&gt;% dplyr::ungroup() %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::summarise(pvals = list(target_p), scores = list(stats::approx(x = percentile, 
-##                   y = .prediction, xout = target_p, ties = &quot;ordered&quot;)$y), 
-##                   .groups = &quot;drop&quot;) %&gt;% tidyr::unnest(cols = c(pvals, 
-##                 scores)) %&gt;% dplyr::rename(percentile_value = pvals, 
-##                 Raw_score = scores) %&gt;% dplyr::mutate(Source = source_string)
-##             df_percentile_curves[[length(df_percentile_curves) + 
-##                 1]] &lt;- df_percent
-##         }
-##     }
-##     df_percentile_final &lt;- dplyr::bind_rows(df_percentile_curves) %&gt;% 
-##         dplyr::mutate(percentile_label = dplyr::case_when(abs(percentile_value - 
-##             0.01) &lt; 0.000000001 ~ &quot;1st percentile&quot;, abs(percentile_value - 
-##             0.05) &lt; 0.000000001 ~ &quot;5th percentile&quot;, abs(percentile_value - 
-##             0.5) &lt; 0.000000001 ~ &quot;50th percentile&quot;, abs(percentile_value - 
-##             0.95) &lt; 0.000000001 ~ &quot;95th percentile&quot;, abs(percentile_value - 
-##             0.99) &lt; 0.000000001 ~ &quot;99th percentile&quot;, TRUE ~ paste0(round(100 * 
-##             percentile_value, 1), &quot;th percentile&quot;)))
-##     df_percentile_final$Source &lt;- factor(df_percentile_final$Source, 
-##         levels = level_order[level_order != &quot;Raw&quot;])
-##     if (!is.null(labels) &amp;&amp; length(labels) == length(level_order)) {
-##         adjusted_labels &lt;- labels[-1]
-##         level_order_no_raw &lt;- level_order[level_order != &quot;Raw&quot;]
-##         if (length(adjusted_labels) != length(level_order_no_raw)) {
-##             stop(&quot;Number of labels doesn&#39;t match number of sources for percentiles.&quot;)
-##         }
-##         df_percentile_final$Source &lt;- forcats::fct_relabel(df_percentile_final$Source, 
-##             function(x) adjusted_labels[match(x, level_order_no_raw)])
-##     }
-##     methodLevels &lt;- levels(df_percentile_final$Source)
-##     df_percentile_final &lt;- df_percentile_final %&gt;% dplyr::mutate(show_text = Source == 
-##         methodLevels[1], line_label = dplyr::if_else(show_text, 
-##         percentile_label, NA_character_))
-##     percentile_data &lt;- df_percentile_final
-##     final_data &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, percentile_data = percentile_data)
-##     saveRDS(final_data, file = output_file, compress = &quot;xz&quot;)
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     approach_set &lt;- levels(percentile_data$Source)
-##     color_values &lt;- palette[-1]
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-##     list(means_ns_sds_and_ses = means_ns_sds_and_ses, overall_estimates = overall_estimates, 
-##         means_plot = plots$means_plot, SDs_plot = plots$SDs_plot, 
-##         SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## }
-## debug: if (file.exists(output_file)) {
-##     message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##     existing_data &lt;- readRDS(output_file)
-##     means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##     overall_estimates &lt;- existing_data$overall_estimates
-##     percentile_data &lt;- existing_data$percentile_data
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     percentile_plot &lt;- NULL
-##     if (!is.null(percentile_data)) {
-##         approach_set &lt;- levels(percentile_data$Source)
-##         if (&quot;Raw&quot; %in% approach_set) {
-##             color_values &lt;- palette
-##         }
-##         else {
-##             color_values &lt;- palette[-1]
-##         }
-##         baseMaxLabelLen &lt;- if (is.null(labels)) 
-##             1
-##         else max(nchar(labels))
-##         maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##             na.rm = TRUE)
-##         myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##             1)/1.7
-##         max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##         percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##             y = Raw_score, color = Source, group = interaction(Source, 
-##                 percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##             linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##             max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##             myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##             name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##             age == max_age_val, show_text, !is.na(line_label)), 
-##             ggplot2::aes(label = line_label), nudge_x = 1, hjust = 0, 
-##             family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, y = &quot;Test score&quot;, 
-##             color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##             hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##             panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##             panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                 linewidth = 0.3), legend.position = &quot;top&quot;)
-##     }
-##     final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##         SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##         percentile_plot = percentile_plot)
-##     rm(existing_data, plots, percentile_data)
-##     gc(verbose = FALSE)
-##     return(final_list)
-## }
-## debug: message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-## debug: existing_data &lt;- readRDS(output_file)
-## debug: means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-## debug: overall_estimates &lt;- existing_data$overall_estimates
-## debug: percentile_data &lt;- existing_data$percentile_data
-## debug: plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, ps_table)
-## debug: percentile_plot &lt;- NULL
-## debug: if (!is.null(percentile_data)) {
-##     approach_set &lt;- levels(percentile_data$Source)
-##     if (&quot;Raw&quot; %in% approach_set) {
-##         color_values &lt;- palette
-##     }
-##     else {
-##         color_values &lt;- palette[-1]
-##     }
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-## }
-## debug: approach_set &lt;- levels(percentile_data$Source)
-## debug: if (&quot;Raw&quot; %in% approach_set) {
-##     color_values &lt;- palette
-## } else {
-##     color_values &lt;- palette[-1]
-## }
-## debug: color_values &lt;- palette[-1]
-## debug: baseMaxLabelLen &lt;- if (is.null(labels)) 1 else max(nchar(labels))
-## debug: max(nchar(labels))
-## debug: maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-## debug: myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-## debug: max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-## debug: percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##     y = Raw_score, color = Source, group = interaction(Source, 
-##         percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##     linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##     max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##     myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##     name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##     age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##     nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##     y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##     hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##     panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##     panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##         linewidth = 0.3), legend.position = &quot;top&quot;)
-## debug: final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##     overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##     SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## debug: rm(existing_data, plots, percentile_data)
-## debug: gc(verbose = FALSE)
-## debug: return(final_list)
-## exiting from: age_norm_comparisons(brm_2, brm_8, ps_table = census_sb, ps_variables = c(&quot;age&quot;, 
-##     &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, 
-##     &quot;region_birth&quot;, &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, &quot;RPP, beta&quot;)), 
-##     palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_nor_beta.rds&quot;)</code></pre>
-<pre class="r"><code>sb_nor_beta[-1]</code></pre>
+  )
+
+
+sb_nor_beta[-1]</code></pre>
 <pre><code>## $overall_estimates
 ## # A tibble: 3 × 5
 ##    Mean SE_of_Mean    SD SE_of_SD Model    
@@ -4284,456 +3965,10 @@ sb_default_vs_boosted &lt;- age_norm_comparisons(
   # &quot;#EE4C97FF&quot;
 ),
   output_file = &quot;data/results/wordsum/sb_default_vs_boosted.rds&quot;
-  )</code></pre>
-<pre><code>## debugging in: age_norm_comparisons(brm_2, brm_2_boosted, ps_table = census_sb, 
-##     ps_variables = c(&quot;age&quot;, &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, 
-##         &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, &quot;region_birth&quot;, 
-##         &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), prediction_transform = prediction_transform, 
-##     sim_size = 100000, labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, 
-##         &quot;RPP, boosted normal&quot;)), palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, 
-##         &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_default_vs_boosted.rds&quot;)
-## debug: {
-##     if (file.exists(output_file)) {
-##         message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##         existing_data &lt;- readRDS(output_file)
-##         means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##         overall_estimates &lt;- existing_data$overall_estimates
-##         percentile_data &lt;- existing_data$percentile_data
-##         plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##             ps_table)
-##         percentile_plot &lt;- NULL
-##         if (!is.null(percentile_data)) {
-##             approach_set &lt;- levels(percentile_data$Source)
-##             if (&quot;Raw&quot; %in% approach_set) {
-##                 color_values &lt;- palette
-##             }
-##             else {
-##                 color_values &lt;- palette[-1]
-##             }
-##             baseMaxLabelLen &lt;- if (is.null(labels)) 
-##                 1
-##             else max(nchar(labels))
-##             maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##                 na.rm = TRUE)
-##             myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##                 1)/1.7
-##             max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##             percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##                 y = Raw_score, color = Source, group = interaction(Source, 
-##                   percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##                 linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##                 max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##                 myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##                 name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##                 age == max_age_val, show_text, !is.na(line_label)), 
-##                 ggplot2::aes(label = line_label), nudge_x = 1, 
-##                 hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##                 y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##                 hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.x = ggplot2::element_blank(), 
-##                 panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                   linewidth = 0.3), legend.position = &quot;top&quot;)
-##         }
-##         final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##             overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##             SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##             percentile_plot = percentile_plot)
-##         rm(existing_data, plots, percentile_data)
-##         gc(verbose = FALSE)
-##         return(final_list)
-##     }
-##     if (is.null(RP)) {
-##         RP &lt;- &quot;census&quot;
-##     }
-##     if (is.character(RP) &amp;&amp; length(RP) == 1) {
-##         RP &lt;- c(RP)
-##     }
-##     brms_models &lt;- list(...)
-##     raw_call_names &lt;- sapply(substitute(list(...))[-1], deparse)
-##     if (!all(sapply(brms_models, inherits, &quot;brmsfit&quot;))) {
-##         stop(&quot;All &#39;...&#39; must be brmsfit models.&quot;)
-##     }
-##     nModels &lt;- length(brms_models)
-##     if (is.null(ps_variables)) {
-##         ps_variables &lt;- lapply(brms_models, function(model) {
-##             all.vars(model$formula$formula)[-1]
-##         })
-##     }
-##     else if (!is.list(ps_variables)) {
-##         ps_variables &lt;- replicate(nModels, ps_variables, simplify = FALSE)
-##     }
-##     else if (length(ps_variables) != nModels) {
-##         stop(&quot;If ps_variables is a list, its length must match number of brms models.&quot;)
-##     }
-##     if (!is.null(prediction_transform)) {
-##         if (is.function(prediction_transform)) {
-##             prediction_transform &lt;- replicate(nModels, prediction_transform, 
-##                 simplify = FALSE)
-##         }
-##         else if (is.list(prediction_transform)) {
-##             if (length(prediction_transform) != nModels) {
-##                 stop(&quot;&#39;prediction_transform&#39; must match # of brms models if it&#39;s a list.&quot;)
-##             }
-##         }
-##         else {
-##             stop(&quot;&#39;prediction_transform&#39; must be NULL or a function or list of functions.&quot;)
-##         }
-##     }
-##     else {
-##         prediction_transform &lt;- replicate(nModels, NULL, simplify = FALSE)
-##     }
-##     first_mod_data &lt;- brms_models[[1]]$data
-##     out_name &lt;- all.vars(brms_models[[1]]$formula$formula)[1]
-##     if (is.na(out_name)) {
-##         stop(&quot;Could not detect outcome from first brms model (multi-param?).&quot;)
-##     }
-##     first_mod_data[[out_name]] &lt;- as.numeric(as.character(first_mod_data[[out_name]]))
-##     means_sds_and_ses_raw &lt;- first_mod_data %&gt;% dplyr::mutate(age = floor(age)) %&gt;% 
-##         dplyr::group_by(age) %&gt;% dplyr::summarise(Raw_n = dplyr::n(), 
-##         Raw_mean = mean(.data[[out_name]], na.rm = TRUE), Raw_sd = sd(.data[[out_name]], 
-##             na.rm = TRUE), Raw_seOfmean = Raw_sd/sqrt(Raw_n), 
-##         .groups = &quot;drop&quot;)
-##     row_level_draws &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]] &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]][[raw_call_names[1]]] &lt;- first_mod_data %&gt;% 
-##         dplyr::mutate(age = floor(age), .draw = 1, .prediction = .data[[out_name]])
-##     age_level_list &lt;- list()
-##     for (this_approach in RP) {
-##         prefix &lt;- if (this_approach == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else &quot;RP_&quot;
-##         approach_age_wide_list &lt;- list()
-##         row_level_draws[[this_approach]] &lt;- list()
-##         for (i in seq_along(brms_models)) {
-##             model &lt;- brms_models[[i]]
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_name &lt;- paste0(prefix, &quot;brm_&quot;, short_name)
-##             this_ps_vars &lt;- ps_variables[[i]]
-##             if (this_approach == &quot;census&quot;) {
-##                 sim_data &lt;- ps_table %&gt;% dplyr::filter(census_n != 
-##                   0) %&gt;% dplyr::ungroup() %&gt;% dplyr::sample_n(size = sim_size, 
-##                   weight = census_n, replace = TRUE)
-##             }
-##             else if (this_approach == &quot;norming_sample&quot;) {
-##                 sim_data &lt;- first_mod_data %&gt;% dplyr::select(dplyr::all_of(this_ps_vars)) %&gt;% 
-##                   dplyr::mutate(age = floor(age)) %&gt;% dplyr::filter(between(age, 
-##                   min(ps_table$age), max(ps_table$age))) %&gt;% 
-##                   dplyr::group_by(dplyr::across(dplyr::everything())) %&gt;% 
-##                   dplyr::summarise(Raw_n = dplyr::n(), .groups = &quot;drop&quot;) %&gt;% 
-##                   dplyr::sample_n(size = sim_size, weight = Raw_n, 
-##                     replace = TRUE)
-##             }
-##             else {
-##                 stop(&quot;RP must be &#39;census&#39; or &#39;norming_sample&#39;.&quot;)
-##             }
-##             sim_data_with_draws &lt;- sim_data %&gt;% mutate(pid = row_number() + 
-##                 100000) %&gt;% select(pid, everything()) %&gt;% tidybayes::add_predicted_draws(model, 
-##                 ndraws = 1000, seed = 810, re_formula = re_formula, 
-##                 allow_new_levels = TRUE)
-##             fun_pred &lt;- prediction_transform[[i]]
-##             if (!is.null(fun_pred)) {
-##                 sim_data_with_draws$.prediction &lt;- fun_pred(sim_data_with_draws$.prediction)
-##             }
-##             summary_df &lt;- sim_data_with_draws %&gt;% dplyr::group_by(age, 
-##                 .draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::group_by(age) %&gt;% dplyr::summarise(`:=`(!!paste0(full_name, 
-##                 &quot;_mean&quot;), mean(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfmean&quot;), stats::sd(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_sd&quot;), sqrt(mean(sd_prediction^2))), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfsd&quot;), stats::sd(sd_prediction)), .groups = &quot;drop&quot;)
-##             approach_age_wide_list[[model_name]] &lt;- summary_df
-##             row_level_draws[[this_approach]][[model_name]] &lt;- sim_data_with_draws
-##         }
-##         approach_age_wide &lt;- purrr::reduce(approach_age_wide_list, 
-##             dplyr::left_join, by = &quot;age&quot;)
-##         age_level_list[[this_approach]] &lt;- approach_age_wide
-##     }
-##     if (length(age_level_list) == 1) {
-##         combined_results &lt;- age_level_list[[1]]
-##     }
-##     else if (length(age_level_list) &gt; 1) {
-##         combined_results &lt;- purrr::reduce(age_level_list, dplyr::left_join, 
-##             by = &quot;age&quot;)
-##     }
-##     else {
-##         combined_results &lt;- means_sds_and_ses_raw
-##     }
-##     combined_results &lt;- combined_results %&gt;% dplyr::left_join(means_sds_and_ses_raw, 
-##         by = &quot;age&quot;)
-##     means_ns_sds_and_ses &lt;- combined_results %&gt;% tidyr::pivot_longer(-age, 
-##         names_to = c(&quot;source&quot;, &quot;.value&quot;), names_pattern = &quot;(.*)_(.*)&quot;)
-##     final_levels &lt;- &quot;Raw&quot;
-##     for (i in seq_along(brms_models)) {
-##         model_name &lt;- raw_call_names[i]
-##         short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##         if (&quot;census&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RPP_brm_&quot;, 
-##                 short_name))
-##         }
-##         if (&quot;norming_sample&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RP_brm_&quot;, 
-##                 short_name))
-##         }
-##     }
-##     existing_sources &lt;- unique(means_ns_sds_and_ses$source)
-##     level_order &lt;- final_levels[final_levels %in% existing_sources]
-##     leftover &lt;- setdiff(existing_sources, level_order)
-##     if (length(leftover) &gt; 0) {
-##         level_order &lt;- c(level_order, leftover)
-##     }
-##     means_ns_sds_and_ses &lt;- means_ns_sds_and_ses %&gt;% dplyr::mutate(source = factor(source, 
-##         levels = level_order))
-##     if (!is.null(labels)) {
-##         if (length(labels) != length(level_order)) {
-##             stop(&quot;Length of &#39;labels&#39; must match final # of sources.\n&quot;, 
-##                 &quot;We have &quot;, length(level_order), &quot; sources in order: &quot;, 
-##                 paste(level_order, collapse = &quot;, &quot;), &quot;\n&quot;, &quot;But you supplied &quot;, 
-##                 length(labels), &quot; labels.&quot;)
-##         }
-##         means_ns_sds_and_ses$source &lt;- forcats::fct_relabel(means_ns_sds_and_ses$source, 
-##             function(x) labels[match(x, level_order)])
-##     }
-##     overall_estimates &lt;- list()
-##     for (appr in names(row_level_draws)) {
-##         prefix &lt;- if (appr == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else if (appr == &quot;norming_sample&quot;) 
-##             &quot;RP_&quot;
-##         else &quot;Raw_&quot;
-##         for (i in seq_along(brms_models)) {
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_label &lt;- if (appr == &quot;raw&quot;) {
-##                 &quot;Raw&quot;
-##             }
-##             else {
-##                 paste0(prefix, &quot;brm_&quot;, short_name)
-##             }
-##             df_sim &lt;- row_level_draws[[appr]][[model_name]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             sum_df &lt;- df_sim %&gt;% dplyr::group_by(.draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::summarise(Mean = mean(mean_prediction), 
-##                   SE_of_Mean = stats::sd(mean_prediction), SD = sqrt(mean(sd_prediction^2)), 
-##                   SE_of_SD = stats::sd(sd_prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::mutate(Model = full_label)
-##             overall_estimates[[length(overall_estimates) + 1]] &lt;- sum_df
-##         }
-##     }
-##     overall_estimates &lt;- dplyr::bind_rows(overall_estimates)
-##     approach_set &lt;- setdiff(names(row_level_draws), &quot;raw&quot;)
-##     target_p &lt;- c(0.01, 0.05, 0.5, 0.95, 0.99)
-##     df_percentile_curves &lt;- list()
-##     for (appr_name in approach_set) {
-##         for (i in seq_along(brms_models)) {
-##             modn &lt;- raw_call_names[i]
-##             shortn &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, modn)
-##             prefix_line &lt;- if (appr_name == &quot;census&quot;) 
-##                 &quot;RPP_&quot;
-##             else &quot;RP_&quot;
-##             df_sim &lt;- row_level_draws[[appr_name]][[modn]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             if (!is.numeric(df_sim$.prediction)) 
-##                 next
-##             source_string &lt;- paste0(prefix_line, &quot;brm_&quot;, shortn)
-##             df_percent &lt;- df_sim %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::arrange(.prediction, .by_group = TRUE) %&gt;% 
-##                 dplyr::mutate(N = dplyr::n(), percentile = (dplyr::row_number() - 
-##                   0.5)/N) %&gt;% dplyr::ungroup() %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::summarise(pvals = list(target_p), scores = list(stats::approx(x = percentile, 
-##                   y = .prediction, xout = target_p, ties = &quot;ordered&quot;)$y), 
-##                   .groups = &quot;drop&quot;) %&gt;% tidyr::unnest(cols = c(pvals, 
-##                 scores)) %&gt;% dplyr::rename(percentile_value = pvals, 
-##                 Raw_score = scores) %&gt;% dplyr::mutate(Source = source_string)
-##             df_percentile_curves[[length(df_percentile_curves) + 
-##                 1]] &lt;- df_percent
-##         }
-##     }
-##     df_percentile_final &lt;- dplyr::bind_rows(df_percentile_curves) %&gt;% 
-##         dplyr::mutate(percentile_label = dplyr::case_when(abs(percentile_value - 
-##             0.01) &lt; 0.000000001 ~ &quot;1st percentile&quot;, abs(percentile_value - 
-##             0.05) &lt; 0.000000001 ~ &quot;5th percentile&quot;, abs(percentile_value - 
-##             0.5) &lt; 0.000000001 ~ &quot;50th percentile&quot;, abs(percentile_value - 
-##             0.95) &lt; 0.000000001 ~ &quot;95th percentile&quot;, abs(percentile_value - 
-##             0.99) &lt; 0.000000001 ~ &quot;99th percentile&quot;, TRUE ~ paste0(round(100 * 
-##             percentile_value, 1), &quot;th percentile&quot;)))
-##     df_percentile_final$Source &lt;- factor(df_percentile_final$Source, 
-##         levels = level_order[level_order != &quot;Raw&quot;])
-##     if (!is.null(labels) &amp;&amp; length(labels) == length(level_order)) {
-##         adjusted_labels &lt;- labels[-1]
-##         level_order_no_raw &lt;- level_order[level_order != &quot;Raw&quot;]
-##         if (length(adjusted_labels) != length(level_order_no_raw)) {
-##             stop(&quot;Number of labels doesn&#39;t match number of sources for percentiles.&quot;)
-##         }
-##         df_percentile_final$Source &lt;- forcats::fct_relabel(df_percentile_final$Source, 
-##             function(x) adjusted_labels[match(x, level_order_no_raw)])
-##     }
-##     methodLevels &lt;- levels(df_percentile_final$Source)
-##     df_percentile_final &lt;- df_percentile_final %&gt;% dplyr::mutate(show_text = Source == 
-##         methodLevels[1], line_label = dplyr::if_else(show_text, 
-##         percentile_label, NA_character_))
-##     percentile_data &lt;- df_percentile_final
-##     final_data &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, percentile_data = percentile_data)
-##     saveRDS(final_data, file = output_file, compress = &quot;xz&quot;)
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     approach_set &lt;- levels(percentile_data$Source)
-##     color_values &lt;- palette[-1]
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-##     list(means_ns_sds_and_ses = means_ns_sds_and_ses, overall_estimates = overall_estimates, 
-##         means_plot = plots$means_plot, SDs_plot = plots$SDs_plot, 
-##         SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## }
-## debug: if (file.exists(output_file)) {
-##     message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##     existing_data &lt;- readRDS(output_file)
-##     means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##     overall_estimates &lt;- existing_data$overall_estimates
-##     percentile_data &lt;- existing_data$percentile_data
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     percentile_plot &lt;- NULL
-##     if (!is.null(percentile_data)) {
-##         approach_set &lt;- levels(percentile_data$Source)
-##         if (&quot;Raw&quot; %in% approach_set) {
-##             color_values &lt;- palette
-##         }
-##         else {
-##             color_values &lt;- palette[-1]
-##         }
-##         baseMaxLabelLen &lt;- if (is.null(labels)) 
-##             1
-##         else max(nchar(labels))
-##         maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##             na.rm = TRUE)
-##         myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##             1)/1.7
-##         max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##         percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##             y = Raw_score, color = Source, group = interaction(Source, 
-##                 percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##             linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##             max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##             myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##             name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##             age == max_age_val, show_text, !is.na(line_label)), 
-##             ggplot2::aes(label = line_label), nudge_x = 1, hjust = 0, 
-##             family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, y = &quot;Test score&quot;, 
-##             color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##             hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##             panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##             panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                 linewidth = 0.3), legend.position = &quot;top&quot;)
-##     }
-##     final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##         SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##         percentile_plot = percentile_plot)
-##     rm(existing_data, plots, percentile_data)
-##     gc(verbose = FALSE)
-##     return(final_list)
-## }
-## debug: message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-## debug: existing_data &lt;- readRDS(output_file)
-## debug: means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-## debug: overall_estimates &lt;- existing_data$overall_estimates
-## debug: percentile_data &lt;- existing_data$percentile_data
-## debug: plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, ps_table)
-## debug: percentile_plot &lt;- NULL
-## debug: if (!is.null(percentile_data)) {
-##     approach_set &lt;- levels(percentile_data$Source)
-##     if (&quot;Raw&quot; %in% approach_set) {
-##         color_values &lt;- palette
-##     }
-##     else {
-##         color_values &lt;- palette[-1]
-##     }
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-## }
-## debug: approach_set &lt;- levels(percentile_data$Source)
-## debug: if (&quot;Raw&quot; %in% approach_set) {
-##     color_values &lt;- palette
-## } else {
-##     color_values &lt;- palette[-1]
-## }
-## debug: color_values &lt;- palette[-1]
-## debug: baseMaxLabelLen &lt;- if (is.null(labels)) 1 else max(nchar(labels))
-## debug: max(nchar(labels))
-## debug: maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-## debug: myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-## debug: max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-## debug: percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##     y = Raw_score, color = Source, group = interaction(Source, 
-##         percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##     linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##     max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##     myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##     name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##     age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##     nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##     y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##     hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##     panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##     panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##         linewidth = 0.3), legend.position = &quot;top&quot;)
-## debug: final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##     overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##     SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## debug: rm(existing_data, plots, percentile_data)
-## debug: gc(verbose = FALSE)
-## debug: return(final_list)
-## exiting from: age_norm_comparisons(brm_2, brm_2_boosted, ps_table = census_sb, 
-##     ps_variables = c(&quot;age&quot;, &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, 
-##         &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, &quot;region_birth&quot;, 
-##         &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), prediction_transform = prediction_transform, 
-##     sim_size = 100000, labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, normal&quot;, 
-##         &quot;RPP, boosted normal&quot;)), palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, 
-##         &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_default_vs_boosted.rds&quot;)</code></pre>
-<pre class="r"><code>sb_default_vs_boosted[-1]</code></pre>
+  )
+
+
+sb_default_vs_boosted[-1]</code></pre>
 <pre><code>## $overall_estimates
 ## # A tibble: 3 × 5
 ##    Mean SE_of_Mean    SD SE_of_SD Model            
@@ -4787,454 +4022,10 @@ sb_with_vs_without_ints &lt;- age_norm_comparisons(
   # &quot;#EE4C97FF&quot;
 ),
   output_file = &quot;data/results/wordsum/sb_with_vs_without_ints.rds&quot;
-  )</code></pre>
-<pre><code>## debugging in: age_norm_comparisons(brm_2, brm_1, ps_table = census_sb, ps_variables = c(&quot;age&quot;, 
-##     &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, 
-##     &quot;region_birth&quot;, &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, without ints&quot;, &quot;RPP, with ints&quot;)), 
-##     palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_with_vs_without_ints.rds&quot;)
-## debug: {
-##     if (file.exists(output_file)) {
-##         message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##         existing_data &lt;- readRDS(output_file)
-##         means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##         overall_estimates &lt;- existing_data$overall_estimates
-##         percentile_data &lt;- existing_data$percentile_data
-##         plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##             ps_table)
-##         percentile_plot &lt;- NULL
-##         if (!is.null(percentile_data)) {
-##             approach_set &lt;- levels(percentile_data$Source)
-##             if (&quot;Raw&quot; %in% approach_set) {
-##                 color_values &lt;- palette
-##             }
-##             else {
-##                 color_values &lt;- palette[-1]
-##             }
-##             baseMaxLabelLen &lt;- if (is.null(labels)) 
-##                 1
-##             else max(nchar(labels))
-##             maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##                 na.rm = TRUE)
-##             myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##                 1)/1.7
-##             max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##             percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##                 y = Raw_score, color = Source, group = interaction(Source, 
-##                   percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##                 linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##                 max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##                 myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##                 name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##                 age == max_age_val, show_text, !is.na(line_label)), 
-##                 ggplot2::aes(label = line_label), nudge_x = 1, 
-##                 hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##                 y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##                 hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.x = ggplot2::element_blank(), 
-##                 panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                   linewidth = 0.3), legend.position = &quot;top&quot;)
-##         }
-##         final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##             overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##             SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##             percentile_plot = percentile_plot)
-##         rm(existing_data, plots, percentile_data)
-##         gc(verbose = FALSE)
-##         return(final_list)
-##     }
-##     if (is.null(RP)) {
-##         RP &lt;- &quot;census&quot;
-##     }
-##     if (is.character(RP) &amp;&amp; length(RP) == 1) {
-##         RP &lt;- c(RP)
-##     }
-##     brms_models &lt;- list(...)
-##     raw_call_names &lt;- sapply(substitute(list(...))[-1], deparse)
-##     if (!all(sapply(brms_models, inherits, &quot;brmsfit&quot;))) {
-##         stop(&quot;All &#39;...&#39; must be brmsfit models.&quot;)
-##     }
-##     nModels &lt;- length(brms_models)
-##     if (is.null(ps_variables)) {
-##         ps_variables &lt;- lapply(brms_models, function(model) {
-##             all.vars(model$formula$formula)[-1]
-##         })
-##     }
-##     else if (!is.list(ps_variables)) {
-##         ps_variables &lt;- replicate(nModels, ps_variables, simplify = FALSE)
-##     }
-##     else if (length(ps_variables) != nModels) {
-##         stop(&quot;If ps_variables is a list, its length must match number of brms models.&quot;)
-##     }
-##     if (!is.null(prediction_transform)) {
-##         if (is.function(prediction_transform)) {
-##             prediction_transform &lt;- replicate(nModels, prediction_transform, 
-##                 simplify = FALSE)
-##         }
-##         else if (is.list(prediction_transform)) {
-##             if (length(prediction_transform) != nModels) {
-##                 stop(&quot;&#39;prediction_transform&#39; must match # of brms models if it&#39;s a list.&quot;)
-##             }
-##         }
-##         else {
-##             stop(&quot;&#39;prediction_transform&#39; must be NULL or a function or list of functions.&quot;)
-##         }
-##     }
-##     else {
-##         prediction_transform &lt;- replicate(nModels, NULL, simplify = FALSE)
-##     }
-##     first_mod_data &lt;- brms_models[[1]]$data
-##     out_name &lt;- all.vars(brms_models[[1]]$formula$formula)[1]
-##     if (is.na(out_name)) {
-##         stop(&quot;Could not detect outcome from first brms model (multi-param?).&quot;)
-##     }
-##     first_mod_data[[out_name]] &lt;- as.numeric(as.character(first_mod_data[[out_name]]))
-##     means_sds_and_ses_raw &lt;- first_mod_data %&gt;% dplyr::mutate(age = floor(age)) %&gt;% 
-##         dplyr::group_by(age) %&gt;% dplyr::summarise(Raw_n = dplyr::n(), 
-##         Raw_mean = mean(.data[[out_name]], na.rm = TRUE), Raw_sd = sd(.data[[out_name]], 
-##             na.rm = TRUE), Raw_seOfmean = Raw_sd/sqrt(Raw_n), 
-##         .groups = &quot;drop&quot;)
-##     row_level_draws &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]] &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]][[raw_call_names[1]]] &lt;- first_mod_data %&gt;% 
-##         dplyr::mutate(age = floor(age), .draw = 1, .prediction = .data[[out_name]])
-##     age_level_list &lt;- list()
-##     for (this_approach in RP) {
-##         prefix &lt;- if (this_approach == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else &quot;RP_&quot;
-##         approach_age_wide_list &lt;- list()
-##         row_level_draws[[this_approach]] &lt;- list()
-##         for (i in seq_along(brms_models)) {
-##             model &lt;- brms_models[[i]]
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_name &lt;- paste0(prefix, &quot;brm_&quot;, short_name)
-##             this_ps_vars &lt;- ps_variables[[i]]
-##             if (this_approach == &quot;census&quot;) {
-##                 sim_data &lt;- ps_table %&gt;% dplyr::filter(census_n != 
-##                   0) %&gt;% dplyr::ungroup() %&gt;% dplyr::sample_n(size = sim_size, 
-##                   weight = census_n, replace = TRUE)
-##             }
-##             else if (this_approach == &quot;norming_sample&quot;) {
-##                 sim_data &lt;- first_mod_data %&gt;% dplyr::select(dplyr::all_of(this_ps_vars)) %&gt;% 
-##                   dplyr::mutate(age = floor(age)) %&gt;% dplyr::filter(between(age, 
-##                   min(ps_table$age), max(ps_table$age))) %&gt;% 
-##                   dplyr::group_by(dplyr::across(dplyr::everything())) %&gt;% 
-##                   dplyr::summarise(Raw_n = dplyr::n(), .groups = &quot;drop&quot;) %&gt;% 
-##                   dplyr::sample_n(size = sim_size, weight = Raw_n, 
-##                     replace = TRUE)
-##             }
-##             else {
-##                 stop(&quot;RP must be &#39;census&#39; or &#39;norming_sample&#39;.&quot;)
-##             }
-##             sim_data_with_draws &lt;- sim_data %&gt;% mutate(pid = row_number() + 
-##                 100000) %&gt;% select(pid, everything()) %&gt;% tidybayes::add_predicted_draws(model, 
-##                 ndraws = 1000, seed = 810, re_formula = re_formula, 
-##                 allow_new_levels = TRUE)
-##             fun_pred &lt;- prediction_transform[[i]]
-##             if (!is.null(fun_pred)) {
-##                 sim_data_with_draws$.prediction &lt;- fun_pred(sim_data_with_draws$.prediction)
-##             }
-##             summary_df &lt;- sim_data_with_draws %&gt;% dplyr::group_by(age, 
-##                 .draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::group_by(age) %&gt;% dplyr::summarise(`:=`(!!paste0(full_name, 
-##                 &quot;_mean&quot;), mean(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfmean&quot;), stats::sd(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_sd&quot;), sqrt(mean(sd_prediction^2))), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfsd&quot;), stats::sd(sd_prediction)), .groups = &quot;drop&quot;)
-##             approach_age_wide_list[[model_name]] &lt;- summary_df
-##             row_level_draws[[this_approach]][[model_name]] &lt;- sim_data_with_draws
-##         }
-##         approach_age_wide &lt;- purrr::reduce(approach_age_wide_list, 
-##             dplyr::left_join, by = &quot;age&quot;)
-##         age_level_list[[this_approach]] &lt;- approach_age_wide
-##     }
-##     if (length(age_level_list) == 1) {
-##         combined_results &lt;- age_level_list[[1]]
-##     }
-##     else if (length(age_level_list) &gt; 1) {
-##         combined_results &lt;- purrr::reduce(age_level_list, dplyr::left_join, 
-##             by = &quot;age&quot;)
-##     }
-##     else {
-##         combined_results &lt;- means_sds_and_ses_raw
-##     }
-##     combined_results &lt;- combined_results %&gt;% dplyr::left_join(means_sds_and_ses_raw, 
-##         by = &quot;age&quot;)
-##     means_ns_sds_and_ses &lt;- combined_results %&gt;% tidyr::pivot_longer(-age, 
-##         names_to = c(&quot;source&quot;, &quot;.value&quot;), names_pattern = &quot;(.*)_(.*)&quot;)
-##     final_levels &lt;- &quot;Raw&quot;
-##     for (i in seq_along(brms_models)) {
-##         model_name &lt;- raw_call_names[i]
-##         short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##         if (&quot;census&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RPP_brm_&quot;, 
-##                 short_name))
-##         }
-##         if (&quot;norming_sample&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RP_brm_&quot;, 
-##                 short_name))
-##         }
-##     }
-##     existing_sources &lt;- unique(means_ns_sds_and_ses$source)
-##     level_order &lt;- final_levels[final_levels %in% existing_sources]
-##     leftover &lt;- setdiff(existing_sources, level_order)
-##     if (length(leftover) &gt; 0) {
-##         level_order &lt;- c(level_order, leftover)
-##     }
-##     means_ns_sds_and_ses &lt;- means_ns_sds_and_ses %&gt;% dplyr::mutate(source = factor(source, 
-##         levels = level_order))
-##     if (!is.null(labels)) {
-##         if (length(labels) != length(level_order)) {
-##             stop(&quot;Length of &#39;labels&#39; must match final # of sources.\n&quot;, 
-##                 &quot;We have &quot;, length(level_order), &quot; sources in order: &quot;, 
-##                 paste(level_order, collapse = &quot;, &quot;), &quot;\n&quot;, &quot;But you supplied &quot;, 
-##                 length(labels), &quot; labels.&quot;)
-##         }
-##         means_ns_sds_and_ses$source &lt;- forcats::fct_relabel(means_ns_sds_and_ses$source, 
-##             function(x) labels[match(x, level_order)])
-##     }
-##     overall_estimates &lt;- list()
-##     for (appr in names(row_level_draws)) {
-##         prefix &lt;- if (appr == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else if (appr == &quot;norming_sample&quot;) 
-##             &quot;RP_&quot;
-##         else &quot;Raw_&quot;
-##         for (i in seq_along(brms_models)) {
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_label &lt;- if (appr == &quot;raw&quot;) {
-##                 &quot;Raw&quot;
-##             }
-##             else {
-##                 paste0(prefix, &quot;brm_&quot;, short_name)
-##             }
-##             df_sim &lt;- row_level_draws[[appr]][[model_name]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             sum_df &lt;- df_sim %&gt;% dplyr::group_by(.draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::summarise(Mean = mean(mean_prediction), 
-##                   SE_of_Mean = stats::sd(mean_prediction), SD = sqrt(mean(sd_prediction^2)), 
-##                   SE_of_SD = stats::sd(sd_prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::mutate(Model = full_label)
-##             overall_estimates[[length(overall_estimates) + 1]] &lt;- sum_df
-##         }
-##     }
-##     overall_estimates &lt;- dplyr::bind_rows(overall_estimates)
-##     approach_set &lt;- setdiff(names(row_level_draws), &quot;raw&quot;)
-##     target_p &lt;- c(0.01, 0.05, 0.5, 0.95, 0.99)
-##     df_percentile_curves &lt;- list()
-##     for (appr_name in approach_set) {
-##         for (i in seq_along(brms_models)) {
-##             modn &lt;- raw_call_names[i]
-##             shortn &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, modn)
-##             prefix_line &lt;- if (appr_name == &quot;census&quot;) 
-##                 &quot;RPP_&quot;
-##             else &quot;RP_&quot;
-##             df_sim &lt;- row_level_draws[[appr_name]][[modn]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             if (!is.numeric(df_sim$.prediction)) 
-##                 next
-##             source_string &lt;- paste0(prefix_line, &quot;brm_&quot;, shortn)
-##             df_percent &lt;- df_sim %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::arrange(.prediction, .by_group = TRUE) %&gt;% 
-##                 dplyr::mutate(N = dplyr::n(), percentile = (dplyr::row_number() - 
-##                   0.5)/N) %&gt;% dplyr::ungroup() %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::summarise(pvals = list(target_p), scores = list(stats::approx(x = percentile, 
-##                   y = .prediction, xout = target_p, ties = &quot;ordered&quot;)$y), 
-##                   .groups = &quot;drop&quot;) %&gt;% tidyr::unnest(cols = c(pvals, 
-##                 scores)) %&gt;% dplyr::rename(percentile_value = pvals, 
-##                 Raw_score = scores) %&gt;% dplyr::mutate(Source = source_string)
-##             df_percentile_curves[[length(df_percentile_curves) + 
-##                 1]] &lt;- df_percent
-##         }
-##     }
-##     df_percentile_final &lt;- dplyr::bind_rows(df_percentile_curves) %&gt;% 
-##         dplyr::mutate(percentile_label = dplyr::case_when(abs(percentile_value - 
-##             0.01) &lt; 0.000000001 ~ &quot;1st percentile&quot;, abs(percentile_value - 
-##             0.05) &lt; 0.000000001 ~ &quot;5th percentile&quot;, abs(percentile_value - 
-##             0.5) &lt; 0.000000001 ~ &quot;50th percentile&quot;, abs(percentile_value - 
-##             0.95) &lt; 0.000000001 ~ &quot;95th percentile&quot;, abs(percentile_value - 
-##             0.99) &lt; 0.000000001 ~ &quot;99th percentile&quot;, TRUE ~ paste0(round(100 * 
-##             percentile_value, 1), &quot;th percentile&quot;)))
-##     df_percentile_final$Source &lt;- factor(df_percentile_final$Source, 
-##         levels = level_order[level_order != &quot;Raw&quot;])
-##     if (!is.null(labels) &amp;&amp; length(labels) == length(level_order)) {
-##         adjusted_labels &lt;- labels[-1]
-##         level_order_no_raw &lt;- level_order[level_order != &quot;Raw&quot;]
-##         if (length(adjusted_labels) != length(level_order_no_raw)) {
-##             stop(&quot;Number of labels doesn&#39;t match number of sources for percentiles.&quot;)
-##         }
-##         df_percentile_final$Source &lt;- forcats::fct_relabel(df_percentile_final$Source, 
-##             function(x) adjusted_labels[match(x, level_order_no_raw)])
-##     }
-##     methodLevels &lt;- levels(df_percentile_final$Source)
-##     df_percentile_final &lt;- df_percentile_final %&gt;% dplyr::mutate(show_text = Source == 
-##         methodLevels[1], line_label = dplyr::if_else(show_text, 
-##         percentile_label, NA_character_))
-##     percentile_data &lt;- df_percentile_final
-##     final_data &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, percentile_data = percentile_data)
-##     saveRDS(final_data, file = output_file, compress = &quot;xz&quot;)
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     approach_set &lt;- levels(percentile_data$Source)
-##     color_values &lt;- palette[-1]
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-##     list(means_ns_sds_and_ses = means_ns_sds_and_ses, overall_estimates = overall_estimates, 
-##         means_plot = plots$means_plot, SDs_plot = plots$SDs_plot, 
-##         SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## }
-## debug: if (file.exists(output_file)) {
-##     message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##     existing_data &lt;- readRDS(output_file)
-##     means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##     overall_estimates &lt;- existing_data$overall_estimates
-##     percentile_data &lt;- existing_data$percentile_data
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     percentile_plot &lt;- NULL
-##     if (!is.null(percentile_data)) {
-##         approach_set &lt;- levels(percentile_data$Source)
-##         if (&quot;Raw&quot; %in% approach_set) {
-##             color_values &lt;- palette
-##         }
-##         else {
-##             color_values &lt;- palette[-1]
-##         }
-##         baseMaxLabelLen &lt;- if (is.null(labels)) 
-##             1
-##         else max(nchar(labels))
-##         maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##             na.rm = TRUE)
-##         myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##             1)/1.7
-##         max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##         percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##             y = Raw_score, color = Source, group = interaction(Source, 
-##                 percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##             linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##             max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##             myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##             name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##             age == max_age_val, show_text, !is.na(line_label)), 
-##             ggplot2::aes(label = line_label), nudge_x = 1, hjust = 0, 
-##             family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, y = &quot;Test score&quot;, 
-##             color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##             hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##             panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##             panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                 linewidth = 0.3), legend.position = &quot;top&quot;)
-##     }
-##     final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##         SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##         percentile_plot = percentile_plot)
-##     rm(existing_data, plots, percentile_data)
-##     gc(verbose = FALSE)
-##     return(final_list)
-## }
-## debug: message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-## debug: existing_data &lt;- readRDS(output_file)
-## debug: means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-## debug: overall_estimates &lt;- existing_data$overall_estimates
-## debug: percentile_data &lt;- existing_data$percentile_data
-## debug: plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, ps_table)
-## debug: percentile_plot &lt;- NULL
-## debug: if (!is.null(percentile_data)) {
-##     approach_set &lt;- levels(percentile_data$Source)
-##     if (&quot;Raw&quot; %in% approach_set) {
-##         color_values &lt;- palette
-##     }
-##     else {
-##         color_values &lt;- palette[-1]
-##     }
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-## }
-## debug: approach_set &lt;- levels(percentile_data$Source)
-## debug: if (&quot;Raw&quot; %in% approach_set) {
-##     color_values &lt;- palette
-## } else {
-##     color_values &lt;- palette[-1]
-## }
-## debug: color_values &lt;- palette[-1]
-## debug: baseMaxLabelLen &lt;- if (is.null(labels)) 1 else max(nchar(labels))
-## debug: max(nchar(labels))
-## debug: maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-## debug: myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-## debug: max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-## debug: percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##     y = Raw_score, color = Source, group = interaction(Source, 
-##         percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##     linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##     max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##     myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##     name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##     age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##     nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##     y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##     hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##     panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##     panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##         linewidth = 0.3), legend.position = &quot;top&quot;)
-## debug: final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##     overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##     SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## debug: rm(existing_data, plots, percentile_data)
-## debug: gc(verbose = FALSE)
-## debug: return(final_list)
-## exiting from: age_norm_comparisons(brm_2, brm_1, ps_table = census_sb, ps_variables = c(&quot;age&quot;, 
-##     &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, 
-##     &quot;region_birth&quot;, &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), 
-##     prediction_transform = prediction_transform, sim_size = 100000, 
-##     labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, without ints&quot;, &quot;RPP, with ints&quot;)), 
-##     palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, &quot;#20854EFF&quot;), output_file = &quot;data/results/wordsum/sb_with_vs_without_ints.rds&quot;)</code></pre>
-<pre class="r"><code>sb_with_vs_without_ints[-1]</code></pre>
+  )
+
+
+sb_with_vs_without_ints[-1]</code></pre>
 <pre><code>## $overall_estimates
 ## # A tibble: 3 × 5
 ##    Mean SE_of_Mean    SD SE_of_SD Model    
@@ -5327,456 +4118,10 @@ sb_vs_non_CR &lt;- age_norm_comparisons(
   &quot;#EE4C97FF&quot;
 ),
   output_file = &quot;data/results/wordsum/sb_vs_non_CR.rds&quot;
-  )</code></pre>
-<pre><code>## debugging in: age_norm_comparisons(brm_2, brm_2_non_CR, ps_table = census_sb, 
-##     ps_variables = c(&quot;age&quot;, &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, 
-##         &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, &quot;region_birth&quot;, 
-##         &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), prediction_transform = prediction_transform, 
-##     sim_size = 100000, labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, full data&quot;, 
-##         &quot;RPP, CR cleaned data&quot;)), palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, 
-##         &quot;#EE4C97FF&quot;), output_file = &quot;data/results/wordsum/sb_vs_non_CR.rds&quot;)
-## debug: {
-##     if (file.exists(output_file)) {
-##         message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##         existing_data &lt;- readRDS(output_file)
-##         means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##         overall_estimates &lt;- existing_data$overall_estimates
-##         percentile_data &lt;- existing_data$percentile_data
-##         plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##             ps_table)
-##         percentile_plot &lt;- NULL
-##         if (!is.null(percentile_data)) {
-##             approach_set &lt;- levels(percentile_data$Source)
-##             if (&quot;Raw&quot; %in% approach_set) {
-##                 color_values &lt;- palette
-##             }
-##             else {
-##                 color_values &lt;- palette[-1]
-##             }
-##             baseMaxLabelLen &lt;- if (is.null(labels)) 
-##                 1
-##             else max(nchar(labels))
-##             maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##                 na.rm = TRUE)
-##             myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##                 1)/1.7
-##             max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##             percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##                 y = Raw_score, color = Source, group = interaction(Source, 
-##                   percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##                 linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##                 max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##                 myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##                 name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##                 age == max_age_val, show_text, !is.na(line_label)), 
-##                 ggplot2::aes(label = line_label), nudge_x = 1, 
-##                 hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##                 y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##                 hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.y = ggplot2::element_blank(), 
-##                 panel.grid.minor.x = ggplot2::element_blank(), 
-##                 panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                   linewidth = 0.3), legend.position = &quot;top&quot;)
-##         }
-##         final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##             overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##             SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##             percentile_plot = percentile_plot)
-##         rm(existing_data, plots, percentile_data)
-##         gc(verbose = FALSE)
-##         return(final_list)
-##     }
-##     if (is.null(RP)) {
-##         RP &lt;- &quot;census&quot;
-##     }
-##     if (is.character(RP) &amp;&amp; length(RP) == 1) {
-##         RP &lt;- c(RP)
-##     }
-##     brms_models &lt;- list(...)
-##     raw_call_names &lt;- sapply(substitute(list(...))[-1], deparse)
-##     if (!all(sapply(brms_models, inherits, &quot;brmsfit&quot;))) {
-##         stop(&quot;All &#39;...&#39; must be brmsfit models.&quot;)
-##     }
-##     nModels &lt;- length(brms_models)
-##     if (is.null(ps_variables)) {
-##         ps_variables &lt;- lapply(brms_models, function(model) {
-##             all.vars(model$formula$formula)[-1]
-##         })
-##     }
-##     else if (!is.list(ps_variables)) {
-##         ps_variables &lt;- replicate(nModels, ps_variables, simplify = FALSE)
-##     }
-##     else if (length(ps_variables) != nModels) {
-##         stop(&quot;If ps_variables is a list, its length must match number of brms models.&quot;)
-##     }
-##     if (!is.null(prediction_transform)) {
-##         if (is.function(prediction_transform)) {
-##             prediction_transform &lt;- replicate(nModels, prediction_transform, 
-##                 simplify = FALSE)
-##         }
-##         else if (is.list(prediction_transform)) {
-##             if (length(prediction_transform) != nModels) {
-##                 stop(&quot;&#39;prediction_transform&#39; must match # of brms models if it&#39;s a list.&quot;)
-##             }
-##         }
-##         else {
-##             stop(&quot;&#39;prediction_transform&#39; must be NULL or a function or list of functions.&quot;)
-##         }
-##     }
-##     else {
-##         prediction_transform &lt;- replicate(nModels, NULL, simplify = FALSE)
-##     }
-##     first_mod_data &lt;- brms_models[[1]]$data
-##     out_name &lt;- all.vars(brms_models[[1]]$formula$formula)[1]
-##     if (is.na(out_name)) {
-##         stop(&quot;Could not detect outcome from first brms model (multi-param?).&quot;)
-##     }
-##     first_mod_data[[out_name]] &lt;- as.numeric(as.character(first_mod_data[[out_name]]))
-##     means_sds_and_ses_raw &lt;- first_mod_data %&gt;% dplyr::mutate(age = floor(age)) %&gt;% 
-##         dplyr::group_by(age) %&gt;% dplyr::summarise(Raw_n = dplyr::n(), 
-##         Raw_mean = mean(.data[[out_name]], na.rm = TRUE), Raw_sd = sd(.data[[out_name]], 
-##             na.rm = TRUE), Raw_seOfmean = Raw_sd/sqrt(Raw_n), 
-##         .groups = &quot;drop&quot;)
-##     row_level_draws &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]] &lt;- list()
-##     row_level_draws[[&quot;raw&quot;]][[raw_call_names[1]]] &lt;- first_mod_data %&gt;% 
-##         dplyr::mutate(age = floor(age), .draw = 1, .prediction = .data[[out_name]])
-##     age_level_list &lt;- list()
-##     for (this_approach in RP) {
-##         prefix &lt;- if (this_approach == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else &quot;RP_&quot;
-##         approach_age_wide_list &lt;- list()
-##         row_level_draws[[this_approach]] &lt;- list()
-##         for (i in seq_along(brms_models)) {
-##             model &lt;- brms_models[[i]]
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_name &lt;- paste0(prefix, &quot;brm_&quot;, short_name)
-##             this_ps_vars &lt;- ps_variables[[i]]
-##             if (this_approach == &quot;census&quot;) {
-##                 sim_data &lt;- ps_table %&gt;% dplyr::filter(census_n != 
-##                   0) %&gt;% dplyr::ungroup() %&gt;% dplyr::sample_n(size = sim_size, 
-##                   weight = census_n, replace = TRUE)
-##             }
-##             else if (this_approach == &quot;norming_sample&quot;) {
-##                 sim_data &lt;- first_mod_data %&gt;% dplyr::select(dplyr::all_of(this_ps_vars)) %&gt;% 
-##                   dplyr::mutate(age = floor(age)) %&gt;% dplyr::filter(between(age, 
-##                   min(ps_table$age), max(ps_table$age))) %&gt;% 
-##                   dplyr::group_by(dplyr::across(dplyr::everything())) %&gt;% 
-##                   dplyr::summarise(Raw_n = dplyr::n(), .groups = &quot;drop&quot;) %&gt;% 
-##                   dplyr::sample_n(size = sim_size, weight = Raw_n, 
-##                     replace = TRUE)
-##             }
-##             else {
-##                 stop(&quot;RP must be &#39;census&#39; or &#39;norming_sample&#39;.&quot;)
-##             }
-##             sim_data_with_draws &lt;- sim_data %&gt;% mutate(pid = row_number() + 
-##                 100000) %&gt;% select(pid, everything()) %&gt;% tidybayes::add_predicted_draws(model, 
-##                 ndraws = 1000, seed = 810, re_formula = re_formula, 
-##                 allow_new_levels = TRUE)
-##             fun_pred &lt;- prediction_transform[[i]]
-##             if (!is.null(fun_pred)) {
-##                 sim_data_with_draws$.prediction &lt;- fun_pred(sim_data_with_draws$.prediction)
-##             }
-##             summary_df &lt;- sim_data_with_draws %&gt;% dplyr::group_by(age, 
-##                 .draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::group_by(age) %&gt;% dplyr::summarise(`:=`(!!paste0(full_name, 
-##                 &quot;_mean&quot;), mean(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfmean&quot;), stats::sd(mean_prediction)), `:=`(!!paste0(full_name, 
-##                 &quot;_sd&quot;), sqrt(mean(sd_prediction^2))), `:=`(!!paste0(full_name, 
-##                 &quot;_seOfsd&quot;), stats::sd(sd_prediction)), .groups = &quot;drop&quot;)
-##             approach_age_wide_list[[model_name]] &lt;- summary_df
-##             row_level_draws[[this_approach]][[model_name]] &lt;- sim_data_with_draws
-##         }
-##         approach_age_wide &lt;- purrr::reduce(approach_age_wide_list, 
-##             dplyr::left_join, by = &quot;age&quot;)
-##         age_level_list[[this_approach]] &lt;- approach_age_wide
-##     }
-##     if (length(age_level_list) == 1) {
-##         combined_results &lt;- age_level_list[[1]]
-##     }
-##     else if (length(age_level_list) &gt; 1) {
-##         combined_results &lt;- purrr::reduce(age_level_list, dplyr::left_join, 
-##             by = &quot;age&quot;)
-##     }
-##     else {
-##         combined_results &lt;- means_sds_and_ses_raw
-##     }
-##     combined_results &lt;- combined_results %&gt;% dplyr::left_join(means_sds_and_ses_raw, 
-##         by = &quot;age&quot;)
-##     means_ns_sds_and_ses &lt;- combined_results %&gt;% tidyr::pivot_longer(-age, 
-##         names_to = c(&quot;source&quot;, &quot;.value&quot;), names_pattern = &quot;(.*)_(.*)&quot;)
-##     final_levels &lt;- &quot;Raw&quot;
-##     for (i in seq_along(brms_models)) {
-##         model_name &lt;- raw_call_names[i]
-##         short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##         if (&quot;census&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RPP_brm_&quot;, 
-##                 short_name))
-##         }
-##         if (&quot;norming_sample&quot; %in% RP) {
-##             final_levels &lt;- c(final_levels, paste0(&quot;RP_brm_&quot;, 
-##                 short_name))
-##         }
-##     }
-##     existing_sources &lt;- unique(means_ns_sds_and_ses$source)
-##     level_order &lt;- final_levels[final_levels %in% existing_sources]
-##     leftover &lt;- setdiff(existing_sources, level_order)
-##     if (length(leftover) &gt; 0) {
-##         level_order &lt;- c(level_order, leftover)
-##     }
-##     means_ns_sds_and_ses &lt;- means_ns_sds_and_ses %&gt;% dplyr::mutate(source = factor(source, 
-##         levels = level_order))
-##     if (!is.null(labels)) {
-##         if (length(labels) != length(level_order)) {
-##             stop(&quot;Length of &#39;labels&#39; must match final # of sources.\n&quot;, 
-##                 &quot;We have &quot;, length(level_order), &quot; sources in order: &quot;, 
-##                 paste(level_order, collapse = &quot;, &quot;), &quot;\n&quot;, &quot;But you supplied &quot;, 
-##                 length(labels), &quot; labels.&quot;)
-##         }
-##         means_ns_sds_and_ses$source &lt;- forcats::fct_relabel(means_ns_sds_and_ses$source, 
-##             function(x) labels[match(x, level_order)])
-##     }
-##     overall_estimates &lt;- list()
-##     for (appr in names(row_level_draws)) {
-##         prefix &lt;- if (appr == &quot;census&quot;) 
-##             &quot;RPP_&quot;
-##         else if (appr == &quot;norming_sample&quot;) 
-##             &quot;RP_&quot;
-##         else &quot;Raw_&quot;
-##         for (i in seq_along(brms_models)) {
-##             model_name &lt;- raw_call_names[i]
-##             short_name &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, model_name)
-##             full_label &lt;- if (appr == &quot;raw&quot;) {
-##                 &quot;Raw&quot;
-##             }
-##             else {
-##                 paste0(prefix, &quot;brm_&quot;, short_name)
-##             }
-##             df_sim &lt;- row_level_draws[[appr]][[model_name]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             sum_df &lt;- df_sim %&gt;% dplyr::group_by(.draw) %&gt;% dplyr::summarise(mean_prediction = mean(.prediction), 
-##                 sd_prediction = sd(.prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::summarise(Mean = mean(mean_prediction), 
-##                   SE_of_Mean = stats::sd(mean_prediction), SD = sqrt(mean(sd_prediction^2)), 
-##                   SE_of_SD = stats::sd(sd_prediction), .groups = &quot;drop&quot;) %&gt;% 
-##                 dplyr::mutate(Model = full_label)
-##             overall_estimates[[length(overall_estimates) + 1]] &lt;- sum_df
-##         }
-##     }
-##     overall_estimates &lt;- dplyr::bind_rows(overall_estimates)
-##     approach_set &lt;- setdiff(names(row_level_draws), &quot;raw&quot;)
-##     target_p &lt;- c(0.01, 0.05, 0.5, 0.95, 0.99)
-##     df_percentile_curves &lt;- list()
-##     for (appr_name in approach_set) {
-##         for (i in seq_along(brms_models)) {
-##             modn &lt;- raw_call_names[i]
-##             shortn &lt;- sub(&quot;^brm_&quot;, &quot;&quot;, modn)
-##             prefix_line &lt;- if (appr_name == &quot;census&quot;) 
-##                 &quot;RPP_&quot;
-##             else &quot;RP_&quot;
-##             df_sim &lt;- row_level_draws[[appr_name]][[modn]]
-##             if (!is.data.frame(df_sim)) 
-##                 next
-##             if (!is.numeric(df_sim$.prediction)) 
-##                 next
-##             source_string &lt;- paste0(prefix_line, &quot;brm_&quot;, shortn)
-##             df_percent &lt;- df_sim %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::arrange(.prediction, .by_group = TRUE) %&gt;% 
-##                 dplyr::mutate(N = dplyr::n(), percentile = (dplyr::row_number() - 
-##                   0.5)/N) %&gt;% dplyr::ungroup() %&gt;% dplyr::group_by(age) %&gt;% 
-##                 dplyr::summarise(pvals = list(target_p), scores = list(stats::approx(x = percentile, 
-##                   y = .prediction, xout = target_p, ties = &quot;ordered&quot;)$y), 
-##                   .groups = &quot;drop&quot;) %&gt;% tidyr::unnest(cols = c(pvals, 
-##                 scores)) %&gt;% dplyr::rename(percentile_value = pvals, 
-##                 Raw_score = scores) %&gt;% dplyr::mutate(Source = source_string)
-##             df_percentile_curves[[length(df_percentile_curves) + 
-##                 1]] &lt;- df_percent
-##         }
-##     }
-##     df_percentile_final &lt;- dplyr::bind_rows(df_percentile_curves) %&gt;% 
-##         dplyr::mutate(percentile_label = dplyr::case_when(abs(percentile_value - 
-##             0.01) &lt; 0.000000001 ~ &quot;1st percentile&quot;, abs(percentile_value - 
-##             0.05) &lt; 0.000000001 ~ &quot;5th percentile&quot;, abs(percentile_value - 
-##             0.5) &lt; 0.000000001 ~ &quot;50th percentile&quot;, abs(percentile_value - 
-##             0.95) &lt; 0.000000001 ~ &quot;95th percentile&quot;, abs(percentile_value - 
-##             0.99) &lt; 0.000000001 ~ &quot;99th percentile&quot;, TRUE ~ paste0(round(100 * 
-##             percentile_value, 1), &quot;th percentile&quot;)))
-##     df_percentile_final$Source &lt;- factor(df_percentile_final$Source, 
-##         levels = level_order[level_order != &quot;Raw&quot;])
-##     if (!is.null(labels) &amp;&amp; length(labels) == length(level_order)) {
-##         adjusted_labels &lt;- labels[-1]
-##         level_order_no_raw &lt;- level_order[level_order != &quot;Raw&quot;]
-##         if (length(adjusted_labels) != length(level_order_no_raw)) {
-##             stop(&quot;Number of labels doesn&#39;t match number of sources for percentiles.&quot;)
-##         }
-##         df_percentile_final$Source &lt;- forcats::fct_relabel(df_percentile_final$Source, 
-##             function(x) adjusted_labels[match(x, level_order_no_raw)])
-##     }
-##     methodLevels &lt;- levels(df_percentile_final$Source)
-##     df_percentile_final &lt;- df_percentile_final %&gt;% dplyr::mutate(show_text = Source == 
-##         methodLevels[1], line_label = dplyr::if_else(show_text, 
-##         percentile_label, NA_character_))
-##     percentile_data &lt;- df_percentile_final
-##     final_data &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, percentile_data = percentile_data)
-##     saveRDS(final_data, file = output_file, compress = &quot;xz&quot;)
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     approach_set &lt;- levels(percentile_data$Source)
-##     color_values &lt;- palette[-1]
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-##     list(means_ns_sds_and_ses = means_ns_sds_and_ses, overall_estimates = overall_estimates, 
-##         means_plot = plots$means_plot, SDs_plot = plots$SDs_plot, 
-##         SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## }
-## debug: if (file.exists(output_file)) {
-##     message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-##     existing_data &lt;- readRDS(output_file)
-##     means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-##     overall_estimates &lt;- existing_data$overall_estimates
-##     percentile_data &lt;- existing_data$percentile_data
-##     plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, 
-##         ps_table)
-##     percentile_plot &lt;- NULL
-##     if (!is.null(percentile_data)) {
-##         approach_set &lt;- levels(percentile_data$Source)
-##         if (&quot;Raw&quot; %in% approach_set) {
-##             color_values &lt;- palette
-##         }
-##         else {
-##             color_values &lt;- palette[-1]
-##         }
-##         baseMaxLabelLen &lt;- if (is.null(labels)) 
-##             1
-##         else max(nchar(labels))
-##         maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), 
-##             na.rm = TRUE)
-##         myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 
-##             1)/1.7
-##         max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##         percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##             y = Raw_score, color = Source, group = interaction(Source, 
-##                 percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##             linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##             max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##             myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##             name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##             age == max_age_val, show_text, !is.na(line_label)), 
-##             ggplot2::aes(label = line_label), nudge_x = 1, hjust = 0, 
-##             family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, y = &quot;Test score&quot;, 
-##             color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##             hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##             panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##             panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##                 linewidth = 0.3), legend.position = &quot;top&quot;)
-##     }
-##     final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##         overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##         SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, 
-##         percentile_plot = percentile_plot)
-##     rm(existing_data, plots, percentile_data)
-##     gc(verbose = FALSE)
-##     return(final_list)
-## }
-## debug: message(&quot;File &#39;&quot;, output_file, &quot;&#39; already exists. Loading from RDS...&quot;)
-## debug: existing_data &lt;- readRDS(output_file)
-## debug: means_ns_sds_and_ses &lt;- existing_data$means_ns_sds_and_ses
-## debug: overall_estimates &lt;- existing_data$overall_estimates
-## debug: percentile_data &lt;- existing_data$percentile_data
-## debug: plots &lt;- norm_plots(means_ns_sds_and_ses, labels, palette, ps_table)
-## debug: percentile_plot &lt;- NULL
-## debug: if (!is.null(percentile_data)) {
-##     approach_set &lt;- levels(percentile_data$Source)
-##     if (&quot;Raw&quot; %in% approach_set) {
-##         color_values &lt;- palette
-##     }
-##     else {
-##         color_values &lt;- palette[-1]
-##     }
-##     baseMaxLabelLen &lt;- if (is.null(labels)) 
-##         1
-##     else max(nchar(labels))
-##     maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-##     myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-##     max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-##     percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##         y = Raw_score, color = Source, group = interaction(Source, 
-##             percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##         linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##         max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##         myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##         name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##         age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##         nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##         y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##         hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##         panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##         panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##             linewidth = 0.3), legend.position = &quot;top&quot;)
-## }
-## debug: approach_set &lt;- levels(percentile_data$Source)
-## debug: if (&quot;Raw&quot; %in% approach_set) {
-##     color_values &lt;- palette
-## } else {
-##     color_values &lt;- palette[-1]
-## }
-## debug: color_values &lt;- palette[-1]
-## debug: baseMaxLabelLen &lt;- if (is.null(labels)) 1 else max(nchar(labels))
-## debug: max(nchar(labels))
-## debug: maxLabelLen2 &lt;- max(nchar(percentile_data$line_label), na.rm = TRUE)
-## debug: myExpandRight2 &lt;- max(baseMaxLabelLen, maxLabelLen2, 1)/1.7
-## debug: max_age_val &lt;- max(percentile_data$age, na.rm = TRUE)
-## debug: percentile_plot &lt;- percentile_data %&gt;% ggplot2::ggplot(ggplot2::aes(x = age, 
-##     y = Raw_score, color = Source, group = interaction(Source, 
-##         percentile_label))) + ggplot2::geom_step(linewidth = 1, 
-##     linetype = 1) + ggplot2::scale_x_continuous(breaks = seq(min(ps_table$age), 
-##     max(ps_table$age), by = 2), expand = ggplot2::expansion(add = c(1, 
-##     myExpandRight2))) + ggplot2::scale_color_manual(values = color_values, 
-##     name = &quot;&quot;) + ggplot2::geom_text(data = dplyr::filter(percentile_data, 
-##     age == max_age_val, show_text, !is.na(line_label)), ggplot2::aes(label = line_label), 
-##     nudge_x = 1, hjust = 0, family = &quot;Times&quot;) + ggplot2::labs(x = &quot;Age&quot;, 
-##     y = &quot;Test score&quot;, color = &quot;&quot;) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, 
-##     hjust = 1), panel.grid.major.y = ggplot2::element_blank(), 
-##     panel.grid.minor.y = ggplot2::element_blank(), panel.grid.minor.x = ggplot2::element_blank(), 
-##     panel.grid.major.x = ggplot2::element_line(linetype = &quot;dashed&quot;, 
-##         linewidth = 0.3), legend.position = &quot;top&quot;)
-## debug: final_list &lt;- list(means_ns_sds_and_ses = means_ns_sds_and_ses, 
-##     overall_estimates = overall_estimates, means_plot = plots$means_plot, 
-##     SDs_plot = plots$SDs_plot, SEs_plot = plots$SEs_plot, percentile_plot = percentile_plot)
-## debug: rm(existing_data, plots, percentile_data)
-## debug: gc(verbose = FALSE)
-## debug: return(final_list)
-## exiting from: age_norm_comparisons(brm_2, brm_2_non_CR, ps_table = census_sb, 
-##     ps_variables = c(&quot;age&quot;, &quot;female&quot;, &quot;educ&quot;, &quot;income_brackets&quot;, 
-##         &quot;race&quot;, &quot;hispan&quot;, &quot;region_residence&quot;, &quot;region_birth&quot;, 
-##         &quot;degfield_branch&quot;, &quot;marst&quot;, &quot;occ_category&quot;), prediction_transform = prediction_transform, 
-##     sim_size = 100000, labels = c(labels = c(&quot;Raw&quot;, &quot;RPP, full data&quot;, 
-##         &quot;RPP, CR cleaned data&quot;)), palette = c(&quot;#BC3C29FF&quot;, &quot;#0072B5FF&quot;, 
-##         &quot;#EE4C97FF&quot;), output_file = &quot;data/results/wordsum/sb_vs_non_CR.rds&quot;)</code></pre>
-<pre class="r"><code>sb_vs_non_CR[-1]</code></pre>
+  )
+
+
+sb_vs_non_CR[-1]</code></pre>
 <pre><code>## $overall_estimates
 ## # A tibble: 3 × 5
 ##    Mean SE_of_Mean    SD SE_of_SD Model           
@@ -5836,17 +4181,18 @@ sb_vs_non_CR &lt;- age_norm_comparisons(
 ## [26] ps_1.7.6             xfun_0.45            cachem_1.1.0         jsonlite_1.8.8       highr_0.11          
 ## [31] psych_2.4.12         parallel_4.4.1       R6_2.5.1             bslib_0.7.0          stringi_1.8.4       
 ## [36] jquerylib_0.1.4      cellranger_1.1.0     estimability_1.5.1   knitr_1.47           zoo_1.8-12          
-## [41] Matrix_1.7-1         splines_4.4.1        timechange_0.3.0     tidyselect_1.2.1     rstudioapi_0.16.0   
-## [46] abind_1.4-8          yaml_2.3.8           codetools_0.2-20     processx_3.8.4       pkgbuild_1.4.4      
-## [51] plyr_1.8.9           lattice_0.22-6       withr_3.0.0          bridgesampling_1.1-2 posterior_1.6.0     
-## [56] coda_0.19-4.1        evaluate_0.24.0      survival_3.8-3       RcppParallel_5.1.9   ggdist_3.3.2        
-## [61] xml2_1.3.6           pillar_1.9.0         tensorA_0.36.2.1     checkmate_2.3.2      stats4_4.4.1        
-## [66] distributional_0.5.0 generics_0.1.3       hms_1.1.3            rstantools_2.4.0     munsell_0.5.1       
-## [71] scales_1.3.0         xtable_1.8-4         glue_1.7.0           emmeans_1.10.6       tools_4.4.1         
-## [76] mvtnorm_1.3-2        grid_4.4.1           QuickJSR_1.5.1       colorspace_2.1-1     nlme_3.1-166        
-## [81] cli_3.6.3            fansi_1.0.6          svUnit_1.0.6         viridisLite_0.4.2    svglite_2.1.3       
-## [86] Brobdingnag_1.2-9    gtable_0.3.6         sass_0.4.9           digest_0.6.36        TH.data_1.1-2       
-## [91] farver_2.1.2         htmltools_0.5.8.1    lifecycle_1.0.4      MASS_7.3-64</code></pre>
+## [41] R.utils_2.12.3       Matrix_1.7-1         splines_4.4.1        timechange_0.3.0     tidyselect_1.2.1    
+## [46] rstudioapi_0.16.0    abind_1.4-8          yaml_2.3.8           codetools_0.2-20     processx_3.8.4      
+## [51] pkgbuild_1.4.4       plyr_1.8.9           lattice_0.22-6       withr_3.0.0          bridgesampling_1.1-2
+## [56] posterior_1.6.0      coda_0.19-4.1        evaluate_0.24.0      survival_3.8-3       RcppParallel_5.1.9  
+## [61] ggdist_3.3.2         xml2_1.3.6           pillar_1.9.0         tensorA_0.36.2.1     checkmate_2.3.2     
+## [66] stats4_4.4.1         distributional_0.5.0 generics_0.1.3       hms_1.1.3            rstantools_2.4.0    
+## [71] munsell_0.5.1        scales_1.3.0         xtable_1.8-4         glue_1.7.0           emmeans_1.10.6      
+## [76] tools_4.4.1          mvtnorm_1.3-2        grid_4.4.1           QuickJSR_1.5.1       colorspace_2.1-1    
+## [81] nlme_3.1-166         cli_3.6.3            fansi_1.0.6          svUnit_1.0.6         viridisLite_0.4.2   
+## [86] svglite_2.1.3        Brobdingnag_1.2-9    gtable_0.3.6         R.methodsS3_1.8.2    sass_0.4.9          
+## [91] digest_0.6.36        TH.data_1.1-2        farver_2.1.2         R.oo_1.27.0          htmltools_0.5.8.1   
+## [96] lifecycle_1.0.4      MASS_7.3-64</code></pre>
 </div>
 </div>
 </div>

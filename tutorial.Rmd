@@ -367,7 +367,7 @@ cat_sizes_census <- census_sb %>%
 
 
 cat_sizes_sb <- sb_data %>%
-   select(-age, -wordsum, -id) %>%
+   select(-age, -wordsum, -pid) %>%
   map_dfr(~ count(tibble(Category = as.character(.x)), Category), 
           .id = "Variable") %>%
   arrange(Variable, Category)
@@ -475,13 +475,6 @@ Terms of this form `(1 | variable)` represent random intercepts, `female` and `h
 ### Normal with interactions
 ```{r}
 
-library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = "cmdstanr")
-sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
-rstan::rstan_options(auto_write = TRUE)
 
   
 
@@ -561,13 +554,6 @@ Many large sd estimates for the random intercepts but most CI bounds, especially
 ### Without interactions
 ```{r}
 
-library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = "cmdstanr")
-sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
-rstan::rstan_options(auto_write = TRUE)
 
 
 
@@ -604,13 +590,6 @@ The model without interactions fits slightly better, probably because any predic
 
 #### Boosted n of iterations and adapt_delta
 ```{r}
-library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = "cmdstanr")
-sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
-rstan::rstan_options(auto_write = TRUE)
 
 
 
@@ -654,13 +633,6 @@ Divergent transitions reduced and some effect estimates changed, but no change i
 ```{r}
 
 
-library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = "cmdstanr")
-sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
-rstan::rstan_options(auto_write = TRUE)
 
 
 brm_4 <- brm(bf(wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets),
@@ -807,7 +779,7 @@ brm_7 <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan
 
 pp_check(brm_7)
 brm_7
-loo_compare(brm_4, brm_7)
+
 ```
 Binomial doesn't seem to be too bad a fit. 
 
@@ -831,7 +803,7 @@ brm_7_ab <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + his
 
 pp_check(brm_7_ab)
 brm_7_ab
-loo_compare(brm_2, brm_4, brm_7, brm_7_ab)
+
 ```
 
 
@@ -869,32 +841,23 @@ Can't loo_compare because we're missing one data point, but pp_check doesn't loo
 ```{r}
 
 
-library(tidyverse)
-library(brms)
-options(mc.cores = 20,
-        threads = threading(5, static = TRUE),
-        brms.backend = "cmdstanr")
-sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds") 
-rstan::rstan_options(auto_write = TRUE)
-
-
-brm_9 <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
-                # phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets))
-    family = beta_binomial(),
-    seed = 14,
-    chains = 4,
-    iter = 2000,
-    prior = prior(normal(0,1), class = "b") +
-            # prior(normal(0,3), class = "Intercept") +
-            prior(exponential(1), class = "sd") + 
-            prior(exponential(1), class = "sds"),
-    file = "data/brms/wordsum/sb/brm_9",
-    data = sb_data) %>%
-  add_criterion("loo")
 # 
+# brm_9 <- brm(bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets)),
+#                 # phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth)  + female + (1 | income_brackets))
+#     family = beta_binomial(),
+#     seed = 14,
+#     chains = 4,
+#     iter = 2000,
+#     prior = prior(normal(0,1), class = "b") +
+#             # prior(normal(0,3), class = "Intercept") +
+#             prior(exponential(1), class = "sd") + 
+#             prior(exponential(1), class = "sds"),
+#     file = "data/brms/wordsum/sb/brm_9",
+#     data = sb_data) 
+# # 
 # pp_check(brm_9)
 # brm_9
-# loo_compare(brm_2, brm_4, brm_9)
+
 ```
 
 Took too long and kept crashing.
@@ -968,9 +931,7 @@ sim_pop_sample <- census_sb %>%
 sim_pop_sample <- census_sb %>% 
   sample_n(size = 100000, 
            weight = census_n, 
-           replace = TRUE) %>% 
-  mutate(pid = row_number() + max(sb_data$id)) |> 
-  select(pid, everything())
+           replace = TRUE)
 ```
 
 
@@ -979,15 +940,6 @@ sim_pop_sample <- census_sb %>%
 Now that we have a post-stratified sample, we can use _tidybayes_’s `add_predicted_draws()` function to draw 1000 samples (i.e., Wordsum Scores) from the posterior for each one of the 100000 simulated participants in `sim_pop_sample`:
 
 ```{r, eval=FALSE}
-
-sim_pop_sample_with_draws2 <- sim_pop_sample %>%
-  add_predicted_draws(brm_7_ab, 
-                      ndraws = 1000, 
-                      seed = 810, 
-                      allow_new_levels = TRUE) %>% 
-  mutate(.prediction = round(pmax(0, pmin(10, .prediction))))
-
-
 
 sim_pop_sample_with_draws <- sim_pop_sample %>%
   add_predicted_draws(brm_2, 
@@ -1011,7 +963,7 @@ Here we aggregate the intelligence scores by age and compute the RPP corrected m
 ```{r}
 sim_pop_sample_with_draws <- data.table::fread("data/results/wordsum/sim_pop_sample_with_draws.csv.gz")
 
-means_sds_and_ses_RPP <- sim_pop_sample_with_draws2 %>% 
+means_sds_and_ses_RPP <- sim_pop_sample_with_draws %>% 
   group_by(age, .draw) %>% 
   summarise(mean_prediction = mean(.prediction), 
             sd_prediction = sd(.prediction)) %>%
@@ -1051,8 +1003,8 @@ iqs_linear <- sim_pop_sample_with_draws %>%
          RPP_IQ = iq(wordsum_score, RPP_mean, RPP_sd),
          RPP_T = t(wordsum_score, RPP_mean, RPP_sd)) %>% 
   group_by(age, wordsum_score) %>% 
-  summarise(RPP_IQ = round(mean(iq_score)),
-            RPP_T = round(mean(T_score)))
+  summarise(RPP_IQ = round(mean(RPP_IQ)),
+            RPP_T = round(mean(RPP_T)))
 
 iqs_linear %>% head(14) %>% kable %>% kable_styling(full_width = FALSE)
 ```
@@ -1281,9 +1233,8 @@ prediction_transform = list(
   function(x) x  # leave binomial predicitons as is# leave binomial predicitons as is
 )
 
-source("age_norm_comparisons.R")
 
-debug(age_norm_comparisons)
+
 
 
 sb_nor_bin2 <- age_norm_comparisons(
@@ -1459,7 +1410,7 @@ brm_2_non_CR <- brm(bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 
     seed = 14,
     chains = 4,
     file = "data/brms/wordsum/sb/brm_4_non_CR",
-    data = sb_data_scaled_CR_cleaned) %>%
+    data = sb_data_CR_cleaned) %>%
   add_criterion("loo")
 
 brm_2_non_CR
