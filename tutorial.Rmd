@@ -40,6 +40,7 @@ knitr::opts_chunk$set(
 	fig.height = 4
 )
 
+# Load packages
 library(tidyverse)
 library(haven)
 library(data.table)
@@ -50,8 +51,10 @@ library(tidybayes)
 library(marginaleffects)
 library(bayesplot)
 library(rstan)
+library(careless)
 
-# depending on the platform on which you want to run the brm you might need this or not. We ran the models on a Linux-operated server
+# Depending on the platform on which you want to run the brm you might need this or not. 
+# We ran the models on a Linux-operated server
 options(mc.cores = 4,
         brms.backend = "cmdstanr",
         scipen = 999,
@@ -61,11 +64,9 @@ options(mc.cores = 4,
 # windowsFonts(Times = windowsFont("Times New Roman"))
 theme_set(theme_minimal(base_size = 12, base_family = "Times"))
 
-## load preprocessed datasets (see preprocessing code below)
-
+# Load preprocessed datasets (see preprocessing code below)
 sb_data <- readRDS("data/preprocessed/wordsum/sb_data.rds")
 census_sb <- readRDS("data/preprocessed/us_census/census_sb.rds")
-
 
 # RPP/RPP function
 source("age_norm_comparisons.R")
@@ -76,15 +77,17 @@ source("age_norm_comparisons.R")
 ## Sample data
 
 ```{r}
-# load dataset after basic cleaning and labelling (see github.com/synth-science/synth-rep-dataset for the raw data and basic cleaning code)
+# Load dataset after basic cleaning and labelling 
+# (see github.com/synth-science/synth-rep-dataset for the raw data and basic cleaning code)
 sb_raw <- read_rds("data/raw/sb/sosci_labelled.rds")
 
 OCC_classification <- readxl::read_xlsx(path = "data/raw/sb/OCC_classification.xlsx", sheet = "classification_table" ) %>% 
   mutate(occ = as.character(occ_occupation)) 
 
-# load the degfield classification table
-
-degfield_hierarchy <- readxl::read_excel("data/raw/sb/degfield_hierarchy.xlsx") %>% # contains a classification of the general codes into larger categories based on this wikipedia article: https://en.wikipedia.org/wiki/Outline_of_academic_disciplines
+# Load the degfield classification table
+degfield_hierarchy <- readxl::read_excel("data/raw/sb/degfield_hierarchy.xlsx") %>% 
+  # Contains a classification of the general codes into larger categories based on 
+  # this wikipedia article: https://en.wikipedia.org/wiki/Outline_of_academic_disciplines
   mutate(
     degfield_label = str_to_lower(degfield_label),
     degfield_category = str_to_lower(degfield_category),
@@ -352,7 +355,6 @@ saveRDS(census_sb, "data/preprocessed/us_census/census_sb.rds")
 census_sb %>% head(14) %>% kable(digits = 2) %>% kable_styling(full_width = FALSE)
 ```
 
-
 ## Check that the two sources have the same variable categories
 
 ```{r}
@@ -370,7 +372,6 @@ cat_sizes_sb <- sb_data %>%
 
 anti_join(cat_sizes_census, cat_sizes_sb, by = "Category")
 ```
-
 
 # Distributional disparities
 
@@ -405,7 +406,7 @@ disparities_plot <- census_sb %>%
   summarise(n = sum(n)) %>% 
   mutate(percentage = n / sum(n) * 100)
 
-# plot age disparities
+# Plot age disparities
 disparities_plot %>%
   filter(variable == "age") %>% 
   ggplot(aes(x = category, y = percentage, group = source, colour = source, label = round(percentage, digits = 1))) +
@@ -678,7 +679,6 @@ brm_5_more_iters <- brm(
   file = "data/brms/wordsum/sb/brm_5_more_iters",
   data = sb_data) %>%
   add_criterion("loo")
-
 
 brm_5_more_iters
 ```
@@ -993,7 +993,7 @@ Here we use the home-made `age_norm_comparisons` function to do some robustness 
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))) # for handling normal predictions (that go out of wordsum bounds)
+  function(x) round(pmax(0, pmin(10, x))) # For handling normal predictions (that go out of wordsum bounds)
 )
 
 sb_raw_vs_rpp_rp <- age_norm_comparisons(
@@ -1085,8 +1085,8 @@ RPP IQs were on average 1.6 IQ points larger than raw ones (absolute difference 
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) as.numeric(as.character(x))  # for handling ordinal predictions
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) as.numeric(as.character(x))  # For handling ordinal predictions
 )
 
 sb_ord_nor <- age_norm_comparisons(
@@ -1119,8 +1119,8 @@ Barely any difference in means, although ordinal predictions are somewhat more d
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) x                            # leave binomial predictions as is
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) x                            # Leave binomial predictions as is
 )
 
 sb_nor_bin <- age_norm_comparisons(
@@ -1149,9 +1149,9 @@ sb_nor_bin[-1]
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) x,                           # leave binomial predictions as is
-  function(x) x                            # leave binomial predictions as is
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) x,                           # Leave binomial predictions as is
+  function(x) x                            # Leave binomial predictions as is
 )
 
 sb_nor_bin2 <- age_norm_comparisons(
@@ -1182,8 +1182,8 @@ sb_nor_bin2
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) round(x * 11)                # for handling beta predictions
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) round(x * 11)                # For handling beta predictions
 )
 
 sb_nor_beta <- age_norm_comparisons(
@@ -1214,8 +1214,8 @@ sb_nor_beta[-1]
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) round(pmax(0, pmin(10, x)))  # for handling normal predictions
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) round(pmax(0, pmin(10, x)))  # For handling normal predictions
 )
 
 sb_default_vs_boosted <- age_norm_comparisons(
@@ -1246,8 +1246,8 @@ sb_default_vs_boosted[-1]
 
 ```{r}
 prediction_transform = list(
-  function(x) round(pmax(0, pmin(10, x))), # for handling normal predictions
-  function(x) round(pmax(0, pmin(10, x)))  # for handling normal predictions
+  function(x) round(pmax(0, pmin(10, x))), # For handling normal predictions
+  function(x) round(pmax(0, pmin(10, x)))  # For handling normal predictions
 )
 
 sb_with_vs_without_ints <- age_norm_comparisons(
@@ -1281,8 +1281,6 @@ Same here.
 ### Exclude participants based on various indicators
 
 ```{r}
-library(careless)
-
 main_qs <- c("AAID", "PANAS", "PAQ", "PSS", "NEPS", "ULS", "FCV", "DAQ", "CESD", "HEXACO", "OCIR", "PTQ", "RAAS", "KSA", "SAS", "MFQ", "CQ")
 
 sb_data_CR_cleaned <- sb_data %>% 
