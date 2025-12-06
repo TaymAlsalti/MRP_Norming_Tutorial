@@ -33,7 +33,7 @@ pre {
 ```{r setup, message = FALSE}
 knitr::opts_chunk$set(
 	message = FALSE,
-	warning = T,
+	warning = TRUE,
 	include = TRUE,
 	error = TRUE,
 	fig.width = 8,
@@ -551,15 +551,15 @@ brm_2 <- brm(
     sigma   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
   data = sb_data_scaled,
-  family = gaussian(), # default
-  prior = prior(normal(0, 1), class = "b") +         # coefficients of fixed effects
-    prior(normal(0, 3), class = "Intercept") + # overall intercept
+  family = gaussian(), # Default
+  prior = prior(normal(0, 1), class = "b") +   # Coefficients of fixed effects
+    prior(normal(0, 3), class = "Intercept") + # Overall intercept
     prior(exponential(1), class = "sd") +      # SDs of the random intercepts
-    prior(exponential(1), class = "sds"),      # wiggliness parameters
+    prior(exponential(1), class = "sds"),      # Wiggliness parameters
   seed = 14,
-  chains = 4,  # default 
-  iter = 2000, # default
-  control = list(adapt_delta = 0.8), # default
+  chains = 4,  # Default 
+  iter = 2000, # Default
+  control = list(adapt_delta = 0.8), # Default
   file = "data/brms/wordsum/sb/brm_2"
 ) %>%
   add_criterion("loo")
@@ -821,7 +821,7 @@ Took too long and kept crashing.
 
 ### Summary
 
-```{r, warning = T}
+```{r, warning = TRUE}
 brm_2
 ```
 
@@ -840,7 +840,7 @@ t <- sb_data %>% mutate(age_group = if_else(age > 40, "> 40", "=< 40"))
 
 yrep <- posterior_predict(brm_2, newdata = t, ndraws = 1000)
 
-p <- ppc_pit_ecdf_grouped(t$wordsum, yrep, group = as.factor(t$age_group), prob = 0.99, plot_diff = F)
+p <- ppc_pit_ecdf_grouped(t$wordsum, yrep, group = as.factor(t$age_group), prob = 0.99, plot_diff = FALSE)
 
 p
 ```
@@ -1080,11 +1080,11 @@ mean(abs(iqs$RPP_IQ-iqs$RP_IQ))
 
 max(iqs$RPP_IQ-iqs$RP_IQ)
 
-mean(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)
+mean(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = TRUE)
 
-mean(abs(iqs$RPP_IQ-iqs$Raw_IQ), na.rm = T)
+mean(abs(iqs$RPP_IQ-iqs$Raw_IQ), na.rm = TRUE)
 
-max(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = T)
+max(iqs$RPP_IQ-iqs$Raw_IQ, na.rm = TRUE)
 ```
 
 RPP IQs were on average 1.6 IQ points larger than raw ones (absolute difference 4.9, max difference 20). Again illustrating that poststratification made an incremental difference beyond the regularisation, RPP IQs were almost 2 points larger than RP ones (max = 12).
@@ -1297,7 +1297,7 @@ sb_data_CR_cleaned <- sb_data %>%
          psychant = psychant(select(., starts_with(main_qs))),
 				 CR_psychsyn_outlier = psychsyn < 0.22,
 				 CR_psychant_outlier = psychant > -0.03,
-				 CR_mahal_outlier = mahad(select(., starts_with(main_qs)), flag = TRUE, confidence = .999, plot = F)$flagged,
+				 CR_mahal_outlier = mahad(select(., starts_with(main_qs)), flag = TRUE, confidence = .999, plot = FALSE)$flagged,
 				 CR_not_serious = ZY02 == "No, my responses should not be used.",
 				 CR_knows_wordsum = MS04 == "Yes") %>% 
          filter(!if_any(starts_with("CR_"), ~ .x == TRUE))
