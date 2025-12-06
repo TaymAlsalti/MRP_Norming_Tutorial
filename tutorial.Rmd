@@ -353,7 +353,10 @@ saveRDS(census_sb, "data/preprocessed/us_census/census_sb.rds")
 ```
 
 ```{r}
-census_sb %>% head(14) %>% kable(digits = 2) %>% kable_styling(full_width = FALSE)
+census_sb %>% 
+  head(14) %>% 
+  kable(digits = 2) %>% 
+  kable_styling(full_width = FALSE)
 ```
 
 ## Check that the two sources have the same variable categories
@@ -473,62 +476,63 @@ sb_data_scaled <- sb_data %>%
          wordsum = scale(wordsum))
 
 brm_1 <- brm(
-  bf(wordsum ~ s(age, by = educ) + (1 | educ) + female + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + (1 | income_brackets) +
-       (1 | educ:race) +
-       (1 | educ:hispan) +
-       (1 | educ:region_residence) +
-       (1 | educ:marst) +
-       (1 | educ:degfield_branch) +
-       (1 | educ:occ_category) +
-       (1 | educ:region_birth) +
-       (1 | educ:income_brackets) +
-       (1 | race:hispan) +
-       (1 | race:region_residence) +
-       (1 | race:marst) +
-       (1 | race:degfield_branch) +
-       (1 | race:occ_category) +
-       (1 | race:region_birth) +
-       (1 | race:income_brackets) +
-       (1 | hispan:region_residence) +
-       (1 | hispan:marst) +
-       (1 | hispan:degfield_branch) +
-       (1 | hispan:occ_category) +
-       (1 | hispan:region_birth) +
-       (1 | hispan:income_brackets) +
-       (1 | region_residence:marst) +
-       (1 | region_residence:degfield_branch) +
-       (1 | region_residence:occ_category) +
-       (1 | region_residence:region_birth) +
-       (1 | region_residence:income_brackets) +
-       (1 | marst:degfield_branch) +
-       (1 | marst:occ_category) +
-       (1 | marst:region_birth) +
-       (1 | marst:income_brackets) +
-       (1 | degfield_branch:occ_category) +
-       (1 | degfield_branch:region_birth) +
-       (1 | degfield_branch:income_brackets) +
-       (1 | occ_category:region_birth) +
-       (1 | occ_category:income_brackets) +
-       (1 | region_birth:income_brackets) +
-       (1 | female:educ) +
-       (1 | female:race) +
-       (1 | female:hispan) +
-       (1 | female:region_residence) +
-       (1 | female:marst) +
-       (1 | female:degfield_branch) +
-       (1 | female:occ_category) +
-       (1 | female:region_birth) +
-       (1 | female:income_brackets),
-     sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  bf(
+    wordsum ~ s(age, by = educ) + (1 | educ) + female + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + (1 | income_brackets) +
+      (1 | educ:race) +
+      (1 | educ:hispan) +
+      (1 | educ:region_residence) +
+      (1 | educ:marst) +
+      (1 | educ:degfield_branch) +
+      (1 | educ:occ_category) +
+      (1 | educ:region_birth) +
+      (1 | educ:income_brackets) +
+      (1 | race:hispan) +
+      (1 | race:region_residence) +
+      (1 | race:marst) +
+      (1 | race:degfield_branch) +
+      (1 | race:occ_category) +
+      (1 | race:region_birth) +
+      (1 | race:income_brackets) +
+      (1 | hispan:region_residence) +
+      (1 | hispan:marst) +
+      (1 | hispan:degfield_branch) +
+      (1 | hispan:occ_category) +
+      (1 | hispan:region_birth) +
+      (1 | hispan:income_brackets) +
+      (1 | region_residence:marst) +
+      (1 | region_residence:degfield_branch) +
+      (1 | region_residence:occ_category) +
+      (1 | region_residence:region_birth) +
+      (1 | region_residence:income_brackets) +
+      (1 | marst:degfield_branch) +
+      (1 | marst:occ_category) +
+      (1 | marst:region_birth) +
+      (1 | marst:income_brackets) +
+      (1 | degfield_branch:occ_category) +
+      (1 | degfield_branch:region_birth) +
+      (1 | degfield_branch:income_brackets) +
+      (1 | occ_category:region_birth) +
+      (1 | occ_category:income_brackets) +
+      (1 | region_birth:income_brackets) +
+      (1 | female:educ) +
+      (1 | female:race) +
+      (1 | female:hispan) +
+      (1 | female:region_residence) +
+      (1 | female:marst) +
+      (1 | female:degfield_branch) +
+      (1 | female:occ_category) +
+      (1 | female:region_birth) +
+      (1 | female:income_brackets),
+    sigma ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-  seed = 14,
-  chains = 4,
+  data = sb_data_scaled,
   prior = prior(normal(0, 1), class = "b") +
     prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_1",
-  data = sb_data_scaled) %>%
+  seed = 14, chains = 4,
+  file = "data/brms/wordsum/sb/brm_1"
+) %>%
   add_criterion("loo")
 
 brm_1
@@ -541,21 +545,23 @@ Many large sd estimates for the random intercepts but most CI bounds, especially
 ### Without interactions
 
 ```{r}
-brm_2 <- brm(bf(
-  wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-  sigma   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+brm_2 <- brm(
+  bf(
+    wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    sigma   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-    family = gaussian(), # default
-    prior = prior(normal(0, 1), class = "b") +         # coefficients of fixed effects
-            prior(normal(0, 3), class = "Intercept") + # overall intercept
-            prior(exponential(1), class = "sd") +      # SDs of the random intercepts
-            prior(exponential(1), class = "sds"),      # wiggliness parameters
-    iter = 2000, # default
-    chains = 4,  # default 
-    control = list(adapt_delta = 0.8), # default
-    seed = 14,
-    file = "data/brms/wordsum/sb/brm_2",
-    data = sb_data_scaled) %>%
+  data = sb_data_scaled,
+  family = gaussian(), # default
+  prior = prior(normal(0, 1), class = "b") +         # coefficients of fixed effects
+    prior(normal(0, 3), class = "Intercept") + # overall intercept
+    prior(exponential(1), class = "sd") +      # SDs of the random intercepts
+    prior(exponential(1), class = "sds"),      # wiggliness parameters
+  seed = 14,
+  chains = 4,  # default 
+  iter = 2000, # default
+  control = list(adapt_delta = 0.8), # default
+  file = "data/brms/wordsum/sb/brm_2"
+) %>%
   add_criterion("loo")
 
 brm_2
@@ -575,19 +581,19 @@ sb_data_scaled <- sb_data %>%
          wordsum = scale(wordsum))
 
 brm_2_boosted <- brm(
-  bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-     sigma   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  bf(
+    wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    sigma   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-  seed = 14,
-  chains = 4,
-  iter = 5000,
-  control = list(adapt_delta = 0.999),
+  data = sb_data_scaled,
   prior = prior(normal(0, 1), class = "b") +
     prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_2_boosted",
-  data = sb_data_scaled) %>%
+  seed = 14, iter = 5000,
+  control = list(adapt_delta = 0.999),
+  file = "data/brms/wordsum/sb/brm_2_boosted"
+) %>%
   add_criterion("loo")
 
 brm_2_boosted
@@ -603,18 +609,19 @@ Divergent transitions reduced and some effect estimates changed, but no change i
 
 ```{r}
 m_4 <- brm(
-  bf(wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-     disc            ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  bf(
+    wordsum_ordinal ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    disc            ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-  seed = 14,
-  chains = 4,
+  data = sb_data,
   family = cumulative(),
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_4",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_4"
+) %>%
   add_criterion("loo")
 brm_4
 
@@ -627,18 +634,19 @@ The ordinal model fits the data better and has only 3 divergent transitions, pro
 
 ```{r}
 brm_5 <- brm(
-  bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-     shape   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  bf(
+    wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    shape   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-  seed = 14,
-  chains = 4,
+  data = sb_data,
   family = negbinomial(),
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_5",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_5"
+) %>%
   add_criterion("loo")
 
 brm_5
@@ -649,15 +657,15 @@ Does not converge.
 ```{r}
 brm_5_v2 <- brm(
   bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)),
-  seed = 14,
-  chains = 4,
+  data = sb_data,
   family = negbinomial(),
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_5_v2",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_5_v2"
+) %>%
   add_criterion("loo")
 
 brm_5_v2
@@ -666,19 +674,19 @@ brm_5_v2
 
 ```{r}
 brm_5_more_iters <- brm(
-  bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-     shape   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  bf(
+    wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    shape   ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
   ),
-  seed = 14,
-  chains = 4,
-  iter = 5000,
+  data = sb_data,
   family = negbinomial(),
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_5_more_iters",
-  data = sb_data) %>%
+  seed = 14, iter = 5000,
+  file = "data/brms/wordsum/sb/brm_5_more_iters"
+) %>%
   add_criterion("loo")
 
 brm_5_more_iters
@@ -691,16 +699,15 @@ Failed to converge even with more iterations.
 ```{r}
 brm_6 <- brm(
   bf(wordsum ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)),
-  seed = 14,
-  chains = 4,
-  iter = 2000,
+  data = sb_data,
   family = poisson(),
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_6",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_6"
+) %>%
   add_criterion("loo")
 
 brm_6
@@ -717,16 +724,15 @@ Bad fit compared to normal and ordinal models.
 ```{r}
 brm_7 <- brm(
   bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)),
+  data = sb_data,
   family = binomial(),  
-  seed = 14,
-  chains = 4,
-  iter = 2000,
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_7",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_7"
+) %>%
   add_criterion("loo")
 
 pp_check(brm_7)
@@ -740,16 +746,15 @@ Binomial doesn't seem to be too bad a fit.
 ```{r}
 brm_7_ab <- brm(
   bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets) + (1 | pid)),
+  data = sb_data,
   family = binomial(),  
-  seed = 14,
-  chains = 4,
-  iter = 2000,
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_7_ab",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_7_ab"
+) %>%
   add_criterion("loo")
 
 pp_check(brm_7_ab)
@@ -765,18 +770,19 @@ sb_data <- sb_data %>%
   filter(wordsum_prop != 0) # exclude one person with a score of 0
 
 brm_8 <- brm(
-  bf(wordsum_prop ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
-     phi          ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)),
+  bf(
+    wordsum_prop ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+    phi          ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+  ),
+  data = sb_data,
   family = Beta(),  
-  seed = 14,
-  chains = 4,
-  iter = 2000,
   prior = prior(normal(0, 1), class = "b") +
     # prior(normal(0, 3), class = "Intercept") +
     prior(exponential(1), class = "sd") + 
     prior(exponential(1), class = "sds"),
-  file = "data/brms/wordsum/sb/brm_8",
-  data = sb_data) %>%
+  seed = 14,
+  file = "data/brms/wordsum/sb/brm_8"
+) %>%
   add_criterion("loo")
 
 brm_8
@@ -790,18 +796,19 @@ Can't loo_compare because we're missing one data point, but pp_check doesn't loo
 
 ```{r}
 # brm_9 <- brm(
-#   bf(wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)),
-#      phi ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets))
-# family = beta_binomial(),
-# seed = 14,
-# chains = 4,
-# iter = 2000,
-# prior = prior(normal(0, 1), class = "b") +
-#   # prior(normal(0, 3), class = "Intercept") +
-#   prior(exponential(1), class = "sd") +
-#   prior(exponential(1), class = "sds"),
-# file = "data/brms/wordsum/sb/brm_9",
-# data = sb_data)
+#   bf(
+#     wordsum | trials(10) ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets),
+#     phi                  ~ s(age) + (1 | educ) + (1 | race) + hispan + (1 | region_residence) + (1 | marst) + (1 | degfield_branch) + (1 | occ_category) + (1 | region_birth) + female + (1 | income_brackets)
+#     ),
+#   data = sb_data,
+#   family = beta_binomial(),
+#   prior = prior(normal(0, 1), class = "b") +
+#     # prior(normal(0, 3), class = "Intercept") +
+#     prior(exponential(1), class = "sd") +
+#     prior(exponential(1), class = "sds"),
+#   seed = 14,
+#   file = "data/brms/wordsum/sb/brm_9"
+# )
 # 
 # pp_check(brm_9)
 # 
