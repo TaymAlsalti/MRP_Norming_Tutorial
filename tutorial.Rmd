@@ -228,18 +228,19 @@ sb_data <- sb_raw %>%
 saveRDS(sb_data, "data/preprocessed/wordsum/sb_data.rds")
 
 ggplot(sb_data, aes(x = wordsum)) +
-    geom_histogram(bins = 11, fill = "blue", color = "black") + # Set bins to 11 for values 0 to 10
-    scale_x_continuous(breaks = 0:10) + # Set x-axis breaks for each possible value
-    labs(x = "Wordsum score", 
-         y = "Frequency") +  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+  geom_histogram(bins = 11, fill = "blue", color = "black") + # Set bins to 11 for values 0 to 10
+  geom_text(aes(label = after_stat(count)), stat = 'count', 
+            vjust = -0.5,      # Adjust vertical position of labels
+            color = "black") + # Color of the labels
+  scale_x_continuous(breaks = 0:10) + # Set x-axis breaks for each possible value
+  labs(x = "Wordsum score", 
+       y = "Frequency") +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.background = element_rect(fill = "transparent", color = NA),
-        # panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank(),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank()) + 
-  geom_text(stat = 'count', aes(label = after_stat(count)), 
-            vjust = -0.5,    # Adjust vertical position of labels
-            color = "black") # Color of the labels
+        panel.grid.minor.x = element_blank(),
+        # panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
 ```
 
 ## Census data
@@ -365,7 +366,7 @@ cat_sizes_census <- census_sb %>%
   arrange(Variable, Category)
 
 cat_sizes_sb <- sb_data %>%
-   select(-age, -wordsum, -pid) %>%
+  select(-age, -wordsum, -pid) %>%
   map_dfr(~ count(tibble(Category = as.character(.x)), Category), 
           .id = "Variable") %>%
   arrange(Variable, Category)
@@ -410,19 +411,19 @@ disparities_plot <- census_sb %>%
 disparities_plot %>%
   filter(variable == "age") %>% 
   ggplot(aes(x = category, y = percentage, group = source, colour = source, label = round(percentage, digits = 1))) +
-  theme_minimal(base_size = 9, base_family = "Times") +
   geom_line(linewidth = .5) +
-  facet_grid(cols = vars(variable), scales = "free", space = 'free', as.table = TRUE) +
+  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x)) +
+  scale_x_discrete(breaks = seq(21, 67, by = 2)) +
+  labs(x = "", y = "Percentage", colour = "", label = "Percentage") +
+  facet_grid(cols = vars(variable), scales = "free", space = "free") + 
+  theme_minimal(base_size = 9, base_family = "Times") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none", 
         # legend.justification = c(1, 1), 
         legend.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3),
         panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3)) + 
-  labs(x = "", y = "Percentage", colour = "", label = "Percentage") +
-  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x)) +
-  scale_x_discrete(breaks = seq(21, 67, by = 2))
+        panel.grid.minor.y = element_blank())
 
 # ggsave("p.jpeg", height = 2, width = 10)
 ```
@@ -441,19 +442,19 @@ disparities_plot %>%
   )) %>% 
   filter(variable != "age") %>% 
   ggplot(aes(x = category, y = percentage, group = source, colour = source, label = round(percentage, digits = 1))) +
-  theme_minimal(base_size = 9, base_family = "Times") +
   geom_line(linewidth = .5) +
-  facet_grid(cols = vars(variable), scales = "free", space = 'free') +
+  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x)) + 
+  labs(x = "Category", y = "Percentage", colour = "", label = "Percentage") +
+  facet_grid(cols = vars(variable), scales = "free", space = "free") +
+  theme_minimal(base_size = 9, base_family = "Times") +
   theme(axis.text.x = element_text(angle = 60, hjust = 1),
         legend.position = c(1, 1.08), 
         legend.justification = c(1, 1), 
         legend.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        panel.grid.major.x = element_line(linetype = "dashed", size = 0.3),
-        plot.margin = margin(0, 0, 0, .05, "cm")) + 
-  labs(x = "Category", y = "Percentage", colour = "", label = "Percentage") +
-  scale_colour_manual(values = c("#0072B5FF", "#BC3C29FF"), labels = function(x) str_to_title(x))
+        plot.margin = margin(0, 0, 0, .05, "cm"))
 
 # ggsave("p.jpeg", height = 3, width = 9)
 ```
