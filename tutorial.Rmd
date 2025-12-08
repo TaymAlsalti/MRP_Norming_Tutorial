@@ -88,10 +88,7 @@ OCC_classification <- readxl::read_xlsx(path = "data/raw/sb/OCC_classification.x
 degfield_hierarchy <- readxl::read_excel("data/raw/sb/degfield_hierarchy.xlsx") %>% 
   # Contains a classification of the general codes into larger categories based on 
   # this wikipedia article: https://en.wikipedia.org/wiki/Outline_of_academic_disciplines
-  mutate(
-    degfield_label = str_to_lower(degfield_label),
-    degfield_category = str_to_lower(degfield_category),
-    degfield_alternative_category = str_to_lower(degfield_alternative_category))
+  mutate(across(degfield_label:degfield_alternative_category, str_to_lower))
 
 divisions <- list(
   new_england = c("connecticut", "maine", "massachusetts", "new hampshire", "rhode island", "vermont"),
