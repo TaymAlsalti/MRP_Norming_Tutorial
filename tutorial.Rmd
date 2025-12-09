@@ -44,6 +44,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 library(haven)
 library(data.table)
+library(osfr)
 library(ggrepel)
 library(kableExtra)
 library(brms)
@@ -241,6 +242,17 @@ ggplot(sb_data, aes(x = wordsum)) +
 ```
 
 ## Census data
+
+The original `usa_00015.dta.gz` file for the census data was too large to upload to GitHub, which has a file-size limit. The file is available for download from our OSF project at https://osf.io/2r9sy. The code below will download the `usa_00015.dta.gz` and save it in the `data/raw/us_census` file directory. This code presumes you have downloaded the entire RStudio project from our GitHub repo at https://github.com/TaymAlsalti/MRP_Norming_Tutorial, which already contains the `data/raw/us_census` file directory structure. As an alternative, you could alter or omit the `path` argument within the `osf_download()` function, and save the `usa_00015.dta.gz` file elsewhere on your local computer.
+
+```{r, eval = FALSE}
+# Download the 143.3 MB file, and save in a subfolder
+osf_retrieve_node("https://osf.io/2r9sy") |>
+  osf_ls_files(path = "Large data files/us_census/raw") |> 
+  osf_download(path = "data/raw/us_census")
+```
+
+Now load the census data file into R, process, and save as `census_sb`.
 
 ```{r, eval = FALSE}
 census_sb_raw <- setDT(read_dta("data/raw/us_census/usa_00015.dta.gz"))
