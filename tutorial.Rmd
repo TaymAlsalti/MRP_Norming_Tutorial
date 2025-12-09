@@ -247,12 +247,12 @@ The original `usa_00015.dta.gz` file for the census data was too large to upload
 
 ```{r, eval = FALSE}
 # Download the 143.3 MB file, and save in a subfolder
-osf_retrieve_node("https://osf.io/2r9sy") |>
-  osf_ls_files(path = "Large data files/us_census/raw") |> 
+osf_retrieve_node("https://osf.io/2r9sy") %>%
+  osf_ls_files(path = "Large data files/us_census/raw") %>% 
   osf_download(path = "data/raw/us_census")
 ```
 
-Now load the census data file into R, process, and save as `census_sb`.
+Now load the census data into R, process, and save as `census_sb`.
 
 ```{r, eval = FALSE}
 census_sb_raw <- setDT(read_dta("data/raw/us_census/usa_00015.dta.gz"))
